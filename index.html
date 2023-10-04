@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>Who is it?</title>
+		<style>
+			table {
+				border-collapse: collapse;
+			}
+
+			table,
+			th,
+			td {
+				border: 1px solid black;
+			}
+
+			th,
+			td {
+				padding: 20px;
+				text-align: center;
+			}
+		</style>
+	</head>
+
+	<body>
+		<table id="player1Table">
+			<tr>
+				<td><button id="1cell1" onclick="toggleUpDown('1cell1')" style="color: limegreen;"></button></td>
+				<td><button id="1cell2" onclick="toggleUpDown('1cell2')" style="color: limegreen;"></button></td>
+				<td><button id="1cell3" onclick="toggleUpDown('1cell3')" style="color: limegreen;"></button></td>
+			</tr>
+			<tr>
+				<td><button id="1cell4" onclick="toggleUpDown('1cell4')" style="color: limegreen;"></button></td>
+				<td><button id="1cell5" onclick="toggleUpDown('1cell5')" style="color: limegreen;"></button></td>
+				<td><button id="1cell6" onclick="toggleUpDown('1cell6')" style="color: limegreen;"></button></td>
+			</tr>
+			<tr>
+				<td><button id="1cell7" onclick="toggleUpDown('1cell7')" style="color: limegreen;"></button></td>
+				<td><button id="1cell8" onclick="toggleUpDown('1cell8')" style="color: limegreen;"></button></td>
+				<td><button id="1cell9" onclick="toggleUpDown('1cell9')" style="color: limegreen;"></button></td>
+			</tr>
+		</table>
+		<input id="player1Input"><button onclick="playerAnswer(1)">Answer</button>
+		<p id="player1Answer"></p>
+		<br>
+		<table id="player2Table">
+			<tr>
+				<td><button id="2cell1" onclick="toggleUpDown('2cell1')" style="color: limegreen;"></button></td>
+				<td><button id="2cell2" onclick="toggleUpDown('2cell2')" style="color: limegreen;"></button></td>
+				<td><button id="2cell3" onclick="toggleUpDown('2cell3')" style="color: limegreen;"></button></td>
+			</tr>
+			<tr>
+				<td><button id="2cell4" onclick="toggleUpDown('2cell4')" style="color: limegreen;"></button></td>
+				<td><button id="2cell5" onclick="toggleUpDown('2cell5')" style="color: limegreen;"></button></td>
+				<td><button id="2cell6" onclick="toggleUpDown('2cell6')" style="color: limegreen;"></button></td>
+			</tr>
+			<tr>
+				<td><button id="2cell7" onclick="toggleUpDown('2cell7')" style="color: limegreen;"></button></td>
+				<td><button id="2cell8" onclick="toggleUpDown('2cell8')" style="color: limegreen;"></button></td>
+				<td><button id="2cell9" onclick="toggleUpDown('2cell9')" style="color: limegreen;"></button></td>
+			</tr>
+		</table>
+		<input id="player2Input"><button onclick="playerAnswer(2)">Answer</button>
+		<p id="player2Answer"></p>
+		<br>
+		<h1 id="winner"></h1>
+
+		<script>
+			const names = ["Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Hank", "Ivy"];
+
+			function makeBoard() {
+				const cells1 = document.getElementById('player1Table').querySelectorAll('button');
+				const cells2 = document.getElementById('player2Table').querySelectorAll('button');
+
+				for (let i = 0; i < names.length; i++) {
+					cells1[i].textContent = names[i];
+					cells2[i].textContent = names[i];
+				}
+
+				const answer1 = document.getElementById('player1Answer').innerText = names[Math.floor(Math.random() * names.length)]
+				const answer2 = document.getElementById('player2Answer').innerText = names[Math.floor(Math.random() * names.length)]
+			}
+
+			function toggleUpDown(id) {
+				if (document.getElementById(id).style.color == 'limegreen') document.getElementById(id).style.color = 'red';
+				else document.getElementById(id).style.color = 'limegreen';
+			}
+
+			function playerAnswer(n) {
+				let guess, answer, winner;
+
+				if (n == 1) {
+					guess = document.getElementById('player1Input').value.toLowerCase();
+					answer = document.getElementById('player2Answer').textContent.toLowerCase();
+					winner = 'PLAYER 1 WON!'
+				}
+				else if (n == 2) {
+					guess = document.getElementById('player2Input').value.toLowerCase();
+					answer = document.getElementById('player1Answer').textContent.toLowerCase();
+					winner = 'PLAYER 2 WON!';
+				}
+
+				if (guess == answer) document.getElementById('winner').textContent = winner;
+			}
+
+			makeBoard();
+		</script>
+	</body>
+
+</html>
