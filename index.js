@@ -1,20 +1,20 @@
-const { response } = require('express');
 const http = require("http");
 const app = require("express")();
 const websocketServer = require("websocket").server;
 const { v4: uuidv4 } = require("uuid");
-const { client } = require('websocket');
 
 const httpServer = http.createServer();
 const serverPort = 9090;
 const clientPort = 9091;
 
 httpServer.listen(serverPort, () => console.log(`Listening on port ${serverPort}`));
-app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
-app.listen(clientPort, () => console.log(`Listening on port ${clientPort}`))
+app.get("/", (_, res) => res.sendFile(__dirname + "/public/index.html"));
+app.listen(clientPort, () => console.log(`Listening on port ${clientPort}`));
 
-const clients = {};
-const games = {};
+const connections = new Map();
+const games = new Map();
+const clientsInGame = new Map();
+
 const wsServer = new websocketServer({
 	"httpServer": httpServer
 });
@@ -22,45 +22,68 @@ const wsServer = new websocketServer({
 wsServer.on("request", request => {
 	const connection = request.accept(null, request.origin);
 
-	connection.on("close", () => console.log("Closed!"));
+	connection.on("close", () => {
+		const clientId = connection.clientId;
+		const gameId = clientsInGame.get(clientId);
+		
+		games.delete(gameId);
+		connections.delete(clientId);
+	});
+
 	connection.on("message", message => {
 		const result = JSON.parse(message.utf8Data);
 
 		// Client wants to create a game
 		if (result.method === "createGame") {
 			const clientCreatingGameId = result.clientId;
+
+			if (clientsInGame.has(clientCreatingGameId)) {
+				const payload = {
+					"method": "error",
+					"errorMessage": "You're already in a game!"
+				}
+
+				return connections.get(clientCreatingGameId).connection.send(JSON.stringify(payload));
+			}
+
 			const newGameId = uuidv4();
 
-			games[newGameId] = {
+			games.set(newGameId, {
 				"id": newGameId,
-				"nBalls": 20,
 				"players": []
-			}
+			})
 
 			const payload = {
 				"method": "createGame",
-				"game": games[newGameId]
+				"game": games.get(newGameId)
 			}
-			const connection = clients[clientCreatingGameId].connection;
 
-			connection.send(JSON.stringify(payload));
+			connections.get(clientCreatingGameId).connection.send(JSON.stringify(payload));
 		}
 
 		// Client wants to join a game
 		if (result.method === "joinGame") {
 			const clientJoiningGameId = result.clientId;
 			const existingGameId = !result.gameId ? null : result.gameId;
-			const game = !games[existingGameId] ? null : games[existingGameId];
-			let payload = {};
+			const game = !games.get(existingGameId) ? null : games.get(existingGameId);
 			let playerExists = false;
 
+			if (clientsInGame.has(clientJoiningGameId)) {
+				const payload = {
+					"method": "error",
+					"errorMessage": "You're already in a game!"
+				}
+
+				return connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
+			}
+
 			if (existingGameId === null || game === null) {
-				payload = {
+				const payload = {
 					"method": "error",
 					"errorMessage": "That game doesn't exist!"
 				}
-				
-				return clients[clientJoiningGameId].connection.send(JSON.stringify(payload));
+
+				return connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
 			}
 
 			game.players.forEach(player => {
@@ -71,47 +94,47 @@ wsServer.on("request", request => {
 			})
 
 			if (playerExists) {
-				payload = {
+				const payload = {
 					"method": "error",
 					"errorMessage": "You're already in that game!"
 				}
 
-				return clients[clientJoiningGameId].connection.send(JSON.stringify(payload));
+				return connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
 			}
 
 			if (game.players.length >= 2) {
-				payload = {
+				const payload = {
 					"method": "error",
 					"errorMessage": "Game reached max players!"
 				}
 
-				return clients[clientJoiningGameId].connection.send(JSON.stringify(payload));
+				return connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
 			}
 
 			game.players.push({
 				"clientId": clientJoiningGameId
 			})
 
-			// Game starts when 2 players have joined
-			if (game.players.length === 2) updateGameState();
+			clientsInGame.set(clientJoiningGameId, game.id)
 
-			payload = {
+			const payload = {
 				"method": "joinGame",
 				"game": game
 			}
 
 			// Tell every player someone joined
 			game.players.forEach(player => {
-				clients[player.clientId].connection.send(JSON.stringify(payload));
+				connections.get(player.clientId).connection.send(JSON.stringify(payload));
 			});
 		}
 	});
 
 	const clientId = uuidv4();
-
-	clients[clientId] = {
+	
+	connection.clientId = clientId;
+	connections.set(clientId, {
 		"connection": connection
-	}
+	});
 
 	const payload = {
 		"method": "connect",

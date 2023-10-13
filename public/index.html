@@ -61,15 +61,7 @@
 			});
 
 			btnJoinGame.addEventListener("click", () => {
-				if (!gameId) gameId = txtJoinGame.value;
-
-				const payload = {
-					"method": "joinGame",
-					"clientId": myClientId,
-					"gameId": gameId
-				}
-
-				ws.send(JSON.stringify(payload));
+				joinGame();
 			});
 
 			// When server responds
@@ -80,11 +72,11 @@
 				switch (response.method) {
 					case "connect":
 						myClientId = response.clientId;
-						console.log(`Client ID successfully set as ${myClientId}`);
 						break;
 					case "createGame":
 						gameId = response.game.id;
 						console.log(`Game successfully created with ID: ${response.game.id}!`);
+						joinGame();
 						break;
 					case "joinGame":
 						const game = response.game;
@@ -97,7 +89,7 @@
 							div.style.width = "200px";
 							div.textContent = player.clientId;
 							divPlayers.appendChild(div);
-						})
+						});
 
 						console.log(`Joined game ${response.game.id} successfully!`);
 						break;
@@ -105,6 +97,18 @@
 						console.log(response.errorMessage);
 						break;
 				}
+			}
+
+			function joinGame() {
+				if (!gameId) gameId = txtJoinGame.value;
+
+				const payload = {
+					"method": "joinGame",
+					"clientId": myClientId,
+					"gameId": gameId
+				}
+
+				ws.send(JSON.stringify(payload));
 			}
 
 		</script>
