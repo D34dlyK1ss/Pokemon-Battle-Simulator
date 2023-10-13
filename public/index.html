@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Who is it?™ Online</title>
+		<style>
+			* {
+				-webkit-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+			}
+
+			table {
+				border-collapse: collapse;
+			}
+
+			table,
+			th,
+			td {
+				border: 1px solid black;
+			}
+
+			th,
+			td {
+				padding: 20px;
+				text-align: center;
+			}
+		</style>
+	</head>
+
+	<body>
+		<h1>Who is it?™ Online</h1>
+		<button id="btnCreateGame">New Game</button>
+		<button id="btnJoinGame">Join Game</button>
+		<input type="text" id="txtJoinGame" />
+		<div id="divPlayers"></div>
+		<div id="divBoard"></div>
+
+		<script>
+			let myClientId = null;
+			let gameId = null;
+			let ws = new WebSocket("ws://localhost:9090");
+
+			// HTML Elements
+			const btnCreateGame = document.getElementById("btnCreateGame");
+			const btnJoinGame = document.getElementById("btnJoinGame");
+			const txtJoinGame = document.getElementById("txtJoinGame");
+			const divPlayers = document.getElementById("divPlayers");
+			const divBoard = document.getElementById("divBoard");
+
+			// Event listeners
+			btnCreateGame.addEventListener("click", () => {
+				const payload = {
+					"method": "createGame",
+					"clientId": myClientId
+				}
+
+				ws.send(JSON.stringify(payload));
+			});
+
+			btnJoinGame.addEventListener("click", () => {
+				if (!gameId) gameId = txtJoinGame.value;
+
+				const payload = {
+					"method": "joinGame",
+					"clientId": myClientId,
+					"gameId": gameId
+				}
+
+				ws.send(JSON.stringify(payload));
+			});
+
+			// When server responds
+			ws.onmessage = message => {
+				const response = JSON.parse(message.data);
+
+				// Connecting
+				switch (response.method) {
+					case "connect":
+						myClientId = response.clientId;
+						console.log(`Client ID successfully set as ${myClientId}`);
+						break;
+					case "createGame":
+						gameId = response.game.id;
+						console.log(`Game successfully created with ID: ${response.game.id}!`);
+						break;
+					case "joinGame":
+						const game = response.game;
+
+						while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
+
+						game.players.forEach(player => {
+							const div = document.createElement("div");
+
+							div.style.width = "200px";
+							div.textContent = player.clientId;
+							divPlayers.appendChild(div);
+						})
+
+						console.log(`Joined game ${response.game.id} successfully!`);
+						break;
+					case "error":
+						console.log(response.errorMessage);
+						break;
+				}
+			}
+
+		</script>
+	</body>
+
+</html>
