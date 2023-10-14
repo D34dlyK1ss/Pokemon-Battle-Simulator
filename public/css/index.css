@@ -1,0 +1,32 @@
+* {
+	-webkit-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table,
+th,
+td {
+	border: 1px solid black;
+}
+
+th,
+td {
+	padding: 20px;
+	text-align: center;
+}
+
+#roomCode {
+	-webkit-user-select: text;
+	-ms-user-select: text;
+	user-select: text;
+	font-size: x-large;
+}
+
+#divPlayers {
+	font-size: large;
+}

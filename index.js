@@ -1,12 +1,14 @@
 const http = require("http");
-const app = require("express")();
+const express = require("express");
+const app = express();
 const websocketServer = require("websocket").server;
 const httpServer = http.createServer();
 const serverPort = 9090;
 const clientPort = 9091;
 
 httpServer.listen(serverPort, () => console.log(`Server port: ${serverPort}`));
-app.get("/", (_, res) => res.sendFile(__dirname + "/public/index.html"));
+app.use(express.static("public"));
+app.get("/", (_, res) => res.sendFile("index.html"));
 app.listen(clientPort, () => console.log(`App port: ${clientPort}`));
 
 const connections = new Map();
@@ -18,6 +20,8 @@ const wsServer = new websocketServer({
 });
 
 wsServer.on("request", request => {
+	if (request.origin === null || request.origin === "*") return;
+
 	const connection = request.accept(null, request.origin);
 
 	connection.on("close", () => {
