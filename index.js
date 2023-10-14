@@ -144,26 +144,32 @@ wsServer.on("request", request => {
 				return connections.get(clientLeavingGameId).connection.send(JSON.stringify(payload));
 			}
 
-			for (let i = 0; i < game.players.length; i++) {
+
+			let i = 0;
+
+			while (i <= game.players.length) {
 				if (game.players[i].clientId === clientLeavingGameId) {
 					game.players.splice(i, 1);
 					clientsInGame.delete(clientLeavingGameId);
 					break;
 				}
+				i++;
 			}
 
-			if (games[gameId]?.players.length === 0) return games.delete(gameId);
-			
-			const payload = {
-				"method": "leaveGame",
-				"game": game
+			if (game.players.length > 0) {
+				const payload = {
+					"method": "leaveGame",
+					"game": game
+				}
+
+				// Tell every player someone left
+				game.players.forEach(player => {
+					connections.get(player.clientId).connection.send(JSON.stringify(payload));
+				});
 			}
-
-			// Tell every player someone left
-			game.players.forEach(player => {
-				connections.get(player.clientId).connection.send(JSON.stringify(payload));
-			});
-
+			else {
+				games.delete(gameId);
+			}
 		}
 	});
 
