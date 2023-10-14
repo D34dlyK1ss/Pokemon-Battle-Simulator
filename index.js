@@ -1,15 +1,13 @@
 const http = require("http");
 const app = require("express")();
 const websocketServer = require("websocket").server;
-const { v4: uuidv4 } = require("uuid");
-
 const httpServer = http.createServer();
 const serverPort = 9090;
 const clientPort = 9091;
 
-httpServer.listen(serverPort, () => console.log(`Listening on port ${serverPort}`));
+httpServer.listen(serverPort, () => console.log(`Server port: ${serverPort}`));
 app.get("/", (_, res) => res.sendFile(__dirname + "/public/index.html"));
-app.listen(clientPort, () => console.log(`Listening on port ${clientPort}`));
+app.listen(clientPort, () => console.log(`App port: ${clientPort}`));
 
 const connections = new Map();
 const games = new Map();
@@ -25,7 +23,8 @@ wsServer.on("request", request => {
 	connection.on("close", () => {
 		const clientId = connection.clientId;
 		const gameId = clientsInGame.get(clientId);
-		
+
+		clientsInGame.delete(clientId);
 		games.delete(gameId);
 		connections.delete(clientId);
 	});
@@ -40,13 +39,13 @@ wsServer.on("request", request => {
 			if (clientsInGame.has(clientCreatingGameId)) {
 				const payload = {
 					"method": "error",
-					"errorMessage": "You're already in a game!"
+					"message": "You're already in a game!"
 				}
 
 				return connections.get(clientCreatingGameId).connection.send(JSON.stringify(payload));
 			}
 
-			const newGameId = uuidv4();
+			const newGameId = newId(8);
 
 			games.set(newGameId, {
 				"id": newGameId,
@@ -71,7 +70,7 @@ wsServer.on("request", request => {
 			if (clientsInGame.has(clientJoiningGameId)) {
 				const payload = {
 					"method": "error",
-					"errorMessage": "You're already in a game!"
+					"message": "You're already in a game!"
 				}
 
 				return connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
@@ -80,7 +79,7 @@ wsServer.on("request", request => {
 			if (existingGameId === null || game === null) {
 				const payload = {
 					"method": "error",
-					"errorMessage": "That game doesn't exist!"
+					"message": "That game doesn't exist!"
 				}
 
 				return connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
@@ -96,7 +95,7 @@ wsServer.on("request", request => {
 			if (playerExists) {
 				const payload = {
 					"method": "error",
-					"errorMessage": "You're already in that game!"
+					"message": "You're already in that game!"
 				}
 
 				return connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
@@ -105,7 +104,7 @@ wsServer.on("request", request => {
 			if (game.players.length >= 2) {
 				const payload = {
 					"method": "error",
-					"errorMessage": "Game reached max players!"
+					"message": "Game reached max players!"
 				}
 
 				return connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
@@ -113,9 +112,8 @@ wsServer.on("request", request => {
 
 			game.players.push({
 				"clientId": clientJoiningGameId
-			})
-
-			clientsInGame.set(clientJoiningGameId, game.id)
+			});
+			clientsInGame.set(clientJoiningGameId, game.id);
 
 			const payload = {
 				"method": "joinGame",
@@ -127,10 +125,40 @@ wsServer.on("request", request => {
 				connections.get(player.clientId).connection.send(JSON.stringify(payload));
 			});
 		}
+
+		if (result.method === "leaveGame") {
+			const clientLeavingGameId = result.clientId;
+			const gameId = result.gameId;
+			const game = !games.get(gameId) ? null : games.get(gameId);
+
+			if (!clientsInGame.has(clientLeavingGameId)) {
+				const payload = {
+					"method": "error",
+					"message": "You're not in any game!"
+				}
+
+				return connections.get(clientLeavingGameId).connection.send(JSON.stringify(payload));
+			}
+
+			for (let i = 0; i < game.players.length; i++) {
+				if (game.players[i].clientId === clientLeavingGameId) game.players.splice(i, 1);
+				clientsInGame.delete(clientLeavingGameId);
+			}
+
+			const payload = {
+				"method": "leaveGame",
+				"game": game
+			}
+
+			// Tell every player someone left
+			game.players.forEach(player => {
+				connections.get(player.clientId).connection.send(JSON.stringify(payload));
+			});
+		}
 	});
 
-	const clientId = uuidv4();
-	
+	const clientId = newId(32);
+
 	connection.clientId = clientId;
 	connections.set(clientId, {
 		"connection": connection
@@ -143,3 +171,15 @@ wsServer.on("request", request => {
 
 	connection.send(JSON.stringify(payload));
 });
+
+function newId(length) {
+	const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	const charactersLength = characters.length;
+	let result = '';
+	let counter = 0;
+	while (counter < length) {
+		result += characters.charAt(Math.floor(Math.random() * charactersLength));
+		counter += 1;
+	}
+	return result;
+}

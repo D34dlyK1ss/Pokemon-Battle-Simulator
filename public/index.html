@@ -27,14 +27,30 @@
 				padding: 20px;
 				text-align: center;
 			}
+
+			#roomCode {
+				-webkit-user-select: text;
+				-ms-user-select: text;
+				user-select: text;
+				font-size: x-large;
+			}
+
+			#divPlayers {
+				font-size: large;
+			}
 		</style>
 	</head>
 
 	<body>
 		<h1>Who is it?™ Online</h1>
 		<button id="btnCreateGame">New Game</button>
+		<br>
 		<button id="btnJoinGame">Join Game</button>
 		<input type="text" id="txtJoinGame" />
+		<br>
+		<button id="btnLeaveGame">Leave Game</button>
+		<br>
+		<p id="roomCode"></p>
 		<div id="divPlayers"></div>
 		<div id="divBoard"></div>
 
@@ -47,6 +63,8 @@
 			const btnCreateGame = document.getElementById("btnCreateGame");
 			const btnJoinGame = document.getElementById("btnJoinGame");
 			const txtJoinGame = document.getElementById("txtJoinGame");
+			const btnLeaveGame = document.getElementById("btnLeaveGame");
+			const roomCode = document.getElementById("roomCode");
 			const divPlayers = document.getElementById("divPlayers");
 			const divBoard = document.getElementById("divBoard");
 
@@ -64,39 +82,65 @@
 				joinGame();
 			});
 
+			btnLeaveGame.addEventListener("click", () => {
+				while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
+
+				roomCode.innerHTML = '';
+
+				const payload = {
+					"method": "leaveGame",
+					"clientId": myClientId,
+					"gameId": gameId
+				}
+
+				ws.send(JSON.stringify(payload));
+				gameId = null;
+			});
+
 			// When server responds
 			ws.onmessage = message => {
 				const response = JSON.parse(message.data);
 
 				// Connecting
-				switch (response.method) {
-					case "connect":
-						myClientId = response.clientId;
-						break;
-					case "createGame":
-						gameId = response.game.id;
-						console.log(`Game successfully created with ID: ${response.game.id}!`);
-						joinGame();
-						break;
-					case "joinGame":
-						const game = response.game;
-
-						while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
-
-						game.players.forEach(player => {
-							const div = document.createElement("div");
-
-							div.style.width = "200px";
-							div.textContent = player.clientId;
-							divPlayers.appendChild(div);
-						});
-
-						console.log(`Joined game ${response.game.id} successfully!`);
-						break;
-					case "error":
-						console.log(response.errorMessage);
-						break;
+				if (response.method === "connect") {
+					myClientId = response.clientId;
 				}
+
+				if (response.method === "createGame") {
+					gameId = response.game.id;
+					joinGame();
+				}
+
+				if (response.method === "joinGame") {
+					while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
+
+					let i = 0;
+					response.game.players.forEach(player => {
+						const div = document.createElement("div");
+
+						div.innerHTML = `<b>Player ${++i}: </b>${player.clientId}`;
+						divPlayers.appendChild(div);
+					});
+
+					roomCode.innerHTML = `<b>Room code: </b>${response.game.id}`;
+				}
+
+				if (response.method === "leaveGame") {
+					while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
+
+					let i = 0;
+					response.game.players.forEach(player => {
+						const div = document.createElement("div");
+
+						div.innerHTML = `<b>Player ${++i}: </b>${player.clientId}`;
+						divPlayers.appendChild(div);
+					});
+				}
+
+				if (response.method === "error") {
+					alert(response.message);
+				}
+
 			}
 
 			function joinGame() {
