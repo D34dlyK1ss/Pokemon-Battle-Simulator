@@ -1,7 +1,8 @@
-const http = require("http");
-const express = require("express");
+import http from "http";
+import express from "express";
+import websocket from "websocket";
 const app = express();
-const websocketServer = require("websocket").server;
+const WebsocketServer = websocket.server;
 const httpServer = http.createServer();
 const serverPort = 9090;
 const clientPort = 9091;
@@ -12,25 +13,22 @@ app.get("/", (_, res) => res.sendFile("index.html"));
 app.listen(clientPort, () => console.log(`App port: ${clientPort}`));
 
 const connections = new Map();
-const games = new Map();
+const games = {};
 const clientsInGame = new Map();
 
-const wsServer = new websocketServer({
+const wsServer = new WebsocketServer({
 	"httpServer": httpServer
 });
 
 wsServer.on("request", request => {
-	if (request.origin === null || request.origin === "*") return;
+	if (!request.origin || request.origin === "*") return;
 
 	const connection = request.accept(null, request.origin);
 
 	connection.on("close", () => {
-		const clientId = connection.clientId;
-		const gameId = clientsInGame.get(clientId);
-
-		if (games[gameId]?.players.length === 0) games.delete(gameId);
-		clientsInGame.delete(clientId);
-		connections.delete(clientId);
+		const clientInGame = clientsInGame.get(connection.clientId);
+		if (clientInGame) removePlayerFromGame(clientInGame, connection.clientId);
+		connections.delete(connection.clientId);
 	});
 
 	connection.on("message", message => {
@@ -44,132 +42,84 @@ wsServer.on("request", request => {
 				const payload = {
 					"method": "error",
 					"message": "You're already in a game!"
-				}
+				};
 
-				return connections.get(clientCreatingGameId).connection.send(JSON.stringify(payload));
+				connections.get(clientCreatingGameId).connection.send(JSON.stringify(payload));
+				return;
 			}
 
 			const newGameId = newId(8);
 
-			games.set(newGameId, {
+			games[newGameId] = {
 				"id": newGameId,
 				"players": []
-			})
+			};
 
 			const payload = {
 				"method": "createGame",
-				"game": games.get(newGameId)
-			}
+				"gameId": newGameId
+			};
 
 			connections.get(clientCreatingGameId).connection.send(JSON.stringify(payload));
+			return;
 		}
 
 		// Client wants to join a game
 		if (result.method === "joinGame") {
+			const gameId = result.gameId;
 			const clientJoiningGameId = result.clientId;
-			const existingGameId = !result.gameId ? null : result.gameId;
-			const game = !games.get(existingGameId) ? null : games.get(existingGameId);
-			let playerExists = false;
 
 			if (clientsInGame.has(clientJoiningGameId)) {
 				const payload = {
 					"method": "error",
 					"message": "You're already in a game!"
-				}
+				};
 
-				return connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
+				connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
+				return;
 			}
 
-			if (existingGameId === null || game === null) {
+			if (!games[gameId]) {
 				const payload = {
 					"method": "error",
 					"message": "That game doesn't exist!"
-				}
+				};
 
-				return connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
+				connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
+				return;
 			}
 
-			game.players.forEach(player => {
-				if (player.clientId === clientJoiningGameId) {
-					playerExists = true;
-					return;
-				}
-			})
-
-			if (playerExists) {
-				const payload = {
-					"method": "error",
-					"message": "You're already in that game!"
-				}
-
-				return connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
-			}
-
-			if (game.players.length >= 2) {
+			if (games[gameId].players.length >= 2) {
 				const payload = {
 					"method": "error",
 					"message": "Game reached max players!"
-				}
+				};
 
-				return connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
+				connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
+				return;
 			}
 
-			game.players.push({
+			games[gameId].players.push({
 				"clientId": clientJoiningGameId
 			});
-			clientsInGame.set(clientJoiningGameId, game.id);
+
+			clientsInGame.set(clientJoiningGameId, games[gameId].id);
 
 			const payload = {
 				"method": "joinGame",
-				"game": game
-			}
+				"game": games[gameId]
+			};
 
 			// Tell every player someone joined
-			game.players.forEach(player => {
+			games[gameId].players.forEach(player => {
 				connections.get(player.clientId).connection.send(JSON.stringify(payload));
 			});
+			return;
 		}
 
 		if (result.method === "leaveGame") {
-			const clientLeavingGameId = result.clientId;
-			const gameId = result.gameId;
-			const game = !games.get(gameId) ? null : games.get(gameId);
-
-			if (!clientsInGame.has(clientLeavingGameId)) {
-				const payload = {
-					"method": "error",
-					"message": "You're not in any game!"
-				}
-
-				return connections.get(clientLeavingGameId).connection.send(JSON.stringify(payload));
-			}
-
-
-			let i = 0;
-
-			while (i <= game.players.length) {
-				if (game.players[i].clientId === clientLeavingGameId) {
-					game.players.splice(i, 1);
-					clientsInGame.delete(clientLeavingGameId);
-					break;
-				}
-				i++;
-			}
-
-			if (game.players.length > 0) {
-				const payload = {
-					"method": "leaveGame",
-					"game": game
-				}
-
-				// Tell every player someone left
-				game.players.forEach(player => {
-					connections.get(player.clientId).connection.send(JSON.stringify(payload));
-				});
-			}
-			else {
-				games.delete(gameId);
-			}
+			removePlayerFromGame(result.gameId, result.clientId);
+			return;
 		}
 	});
 
@@ -183,19 +133,61 @@ wsServer.on("request", request => {
 	const payload = {
 		"method": "connect",
 		"clientId": clientId
-	}
+	};
 
 	connection.send(JSON.stringify(payload));
 });
 
 function newId(length) {
-	const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-	const charactersLength = characters.length;
-	let result = '';
-	let counter = 0;
-	while (counter < length) {
-		result += characters.charAt(Math.floor(Math.random() * charactersLength));
-		counter += 1;
+	const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	let result = "";
+	let i = 0;
+
+	while (i < length) {
+		result += characters.charAt(Math.floor(Math.random() * characters.length));
+		i++;
 	}
+
 	return result;
+}
+
+function removePlayerFromGame(_gameId, _leavingPlayerId) {
+	let game = games[_gameId];
+
+	if (!game) {
+		const payload = {
+			"method": "error",
+			"message": "You're not in any game!"
+		};
+
+		connections.get(_leavingPlayerId).connection.send(JSON.stringify(payload));
+		return;
+	}
+
+	let i = 0;
+
+	for (const player of game.players) {
+		if (player.clientId === _leavingPlayerId) {
+			games[_gameId].players.splice(i, 1);
+			game = games[_gameId];
+			clientsInGame.delete(_leavingPlayerId);
+			break;
+		}
+		i++;
+	}
+
+	if (games[_gameId].players.length === 0) {
+		delete games[_gameId];
+		return;
+	}
+
+	for (const player of games[_gameId].players) {
+		// Tell this player someone left
+		const payload = {
+			"method": "playerLeft",
+			"game": games[_gameId]
+		};
+
+		connections.get(player.clientId).connection.send(JSON.stringify(payload));
+	}
 }

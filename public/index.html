@@ -5,7 +5,7 @@
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>Who is it?™ Online</title>
-		<link rel="stylesheet" href="css/index.css"/>
+		<link rel="stylesheet" href="css/index.css" />
 	</head>
 
 	<body>
@@ -46,14 +46,12 @@
 			});
 
 			btnJoinGame.addEventListener("click", () => {
-				joinGame();
+				if (!txtJoinGame.value) return alert("Please type a room code into the text box.");
+
+				joinGame(txtJoinGame.value);
 			});
 
 			btnLeaveGame.addEventListener("click", () => {
-				while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
-
-				roomCode.innerHTML = '';
-
 				const payload = {
 					"method": "leaveGame",
 					"clientId": myClientId,
@@ -61,65 +59,70 @@
 				}
 
 				ws.send(JSON.stringify(payload));
+				roomCode.innerHTML = '';
 				gameId = null;
+
+				while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
 			});
 
 			// When server responds
 			ws.onmessage = message => {
-				const response = JSON.parse(message.data);
+				const response = JSON.parse(message.data)
+
+				if (response.method === "error") {
+					alert(response.message);
+					return;
+				}
 
 				// Connecting
 				if (response.method === "connect") {
 					myClientId = response.clientId;
+					return;
 				}
 
+				// Creating a game
 				if (response.method === "createGame") {
-					gameId = response.game.id;
-					joinGame();
+					joinGame(response.gameId);
+					return;
 				}
 
+				// Joining a game
 				if (response.method === "joinGame") {
-					while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
-
-					let i = 0;
-					response.game.players.forEach(player => {
-						const div = document.createElement("div");
-
-						div.innerHTML = `<b>Player ${++i}: </b>${player.clientId}`;
-						divPlayers.appendChild(div);
-					});
-
-					roomCode.innerHTML = `<b>Room code: </b>${response.game.id}`;
+					gameId = response.game.id;
+					roomCode.innerHTML = `<b>Room code: </b>${gameId}`;
+					updatePlayers(response.game.players);
+					return;
 				}
 
-				if (response.method === "leaveGame") {
-					while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
-
-					let i = 0;
-					response.game.players.forEach(player => {
-						const div = document.createElement("div");
-
-						div.innerHTML = `<b>Player ${++i}: </b>${player.clientId}`;
-						divPlayers.appendChild(div);
-					});
+				// A player left the game
+				if (response.method === "playerLeft") {
+					console.log(response.game.players);
+					updatePlayers(response.game.players)
+					return;
 				}
-
-				if (response.method === "error") {
-					alert(response.message);
-				}
-
 			}
 
-			function joinGame() {
-				if (!gameId) gameId = txtJoinGame.value;
-
+			function joinGame(_gameId) {
 				const payload = {
 					"method": "joinGame",
 					"clientId": myClientId,
-					"gameId": gameId
+					"gameId": _gameId
 				}
 
 				ws.send(JSON.stringify(payload));
+			}
+
+			function updatePlayers(_arrayPlayers) {
+				while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
+
+				let i = 0;
+				
+				_arrayPlayers.forEach(player => {
+					const div = document.createElement("div");
+
+					div.innerHTML = `<b>Player ${++i}: </b>${player.clientId}`;
+					divPlayers.appendChild(div);
+				});
 			}
 
 		</script>
