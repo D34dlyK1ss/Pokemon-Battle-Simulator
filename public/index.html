@@ -119,8 +119,9 @@
 				
 				_arrayPlayers.forEach(player => {
 					const div = document.createElement("div");
+					const text = player.clientId === myClientId ? `<b>You</b>` : player.clientId;
 
-					div.innerHTML = `<b>Player ${++i}: </b>${player.clientId}`;
+					div.innerHTML = `<b>Player ${++i}: </b>${text}`;
 					divPlayers.appendChild(div);
 				});
 			}
