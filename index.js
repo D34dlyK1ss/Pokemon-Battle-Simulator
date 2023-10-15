@@ -1,50 +1,55 @@
-import http from "http";
 import express from "express";
-import websocket from "websocket";
-const app = express();
-const WebsocketServer = websocket.server;
-const httpServer = http.createServer();
-const serverPort = 9090;
-const clientPort = 9091;
+import { WebSocketServer } from "ws";
 
-httpServer.listen(serverPort, () => console.log(`Server port: ${serverPort}`));
+const serverPort = process.env.SERVER_PORT || 9090;
+const wss = new WebSocketServer({ port: serverPort });
+wss.on("listening", () => {
+	console.log(`Server port: ${serverPort}`);
+});
+
+const app = express();
+const clientPort = process.env.CLIENT_PORT || 9091;
 app.use(express.static("public"));
 app.get("/", (_, res) => res.sendFile("index.html"));
 app.listen(clientPort, () => console.log(`App port: ${clientPort}`));
 
-const connections = new Map();
-const games = {};
+const activeConnections = new Map();
 const clientsInGame = new Map();
+const games = {};
 
-const wsServer = new WebsocketServer({
-	"httpServer": httpServer
-});
+wss.on("connection", ws => {
+	const id = newId(32);
+	const clientData = { "id": id };
+	ws.clientData = clientData;
+	activeConnections.set(id, { "connection": ws });
 
-wsServer.on("request", request => {
-	if (!request.origin || request.origin === "*") return;
+	const payload = {
+		"method": "connect",
+		"client": clientData
+	};
 
-	const connection = request.accept(null, request.origin);
+	ws.send(JSON.stringify(payload));
 
-	connection.on("close", () => {
-		const clientInGame = clientsInGame.get(connection.clientId);
-		if (clientInGame) removePlayerFromGame(clientInGame, connection.clientId);
-		connections.delete(connection.clientId);
+	ws.on("close", () => {
+		const clientInGame = clientsInGame.get(ws.clientData.id);
+		if (clientInGame) removePlayerFromGame(clientInGame, ws.clientData.id);
+		activeConnections.delete(ws.clientData.id);
 	});
 
-	connection.on("message", message => {
-		const result = JSON.parse(message.utf8Data);
+	ws.on("message", message => {
+		const result = JSON.parse(message);
+		const method = result.method;
+		const client = activeConnections.get(result.client.id);
 
 		// Client wants to create a game
-		if (result.method === "createGame") {
-			const clientCreatingGameId = result.clientId;
-
-			if (clientsInGame.has(clientCreatingGameId)) {
+		if (method === "createGame") {
+			if (clientsInGame.has(result.client.id)) {
 				const payload = {
 					"method": "error",
 					"message": "You're already in a game!"
 				};
 
-				connections.get(clientCreatingGameId).connection.send(JSON.stringify(payload));
+				client.connection.send(JSON.stringify(payload));
 				return;
 			}
 
@@ -60,22 +65,21 @@ wsServer.on("request", request => {
 				"gameId": newGameId
 			};
 
-			connections.get(clientCreatingGameId).connection.send(JSON.stringify(payload));
+			client.connection.send(JSON.stringify(payload));
 			return;
 		}
 
 		// Client wants to join a game
-		if (result.method === "joinGame") {
+		if (method === "joinGame") {
 			const gameId = result.gameId;
-			const clientJoiningGameId = result.clientId;
 
-			if (clientsInGame.has(clientJoiningGameId)) {
+			if (clientsInGame.has(result.client.id)) {
 				const payload = {
 					"method": "error",
 					"message": "You're already in a game!"
 				};
 
-				connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
+				client.connection.send(JSON.stringify(payload));
 				return;
 			}
 
@@ -85,7 +89,7 @@ wsServer.on("request", request => {
 					"message": "That game doesn't exist!"
 				};
 
-				connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
+				client.connection.send(JSON.stringify(payload));
 				return;
 			}
 
@@ -95,15 +99,15 @@ wsServer.on("request", request => {
 					"message": "Game reached max players!"
 				};
 
-				connections.get(clientJoiningGameId).connection.send(JSON.stringify(payload));
+				client.connection.send(JSON.stringify(payload));
 				return;
 			}
 
 			games[gameId].players.push({
-				"clientId": clientJoiningGameId
+				"id": result.client.id
 			});
 
-			clientsInGame.set(clientJoiningGameId, games[gameId].id);
+			clientsInGame.set(result.client.id, games[gameId].id);
 
 			const payload = {
 				"method": "joinGame",
@@ -112,38 +116,24 @@ wsServer.on("request", request => {
 
 			// Tell every player someone joined
 			games[gameId].players.forEach(player => {
-				connections.get(player.clientId).connection.send(JSON.stringify(payload));
+				activeConnections.get(player.id).connection.send(JSON.stringify(payload));
 			});
 			return;
 		}
 
-		if (result.method === "leaveGame") {
-			removePlayerFromGame(result.gameId, result.clientId);
+		if (method === "leaveGame") {
+			removePlayerFromGame(result.gameId, result.client.id);
 			return;
 		}
 	});
-
-	const clientId = newId(32);
-
-	connection.clientId = clientId;
-	connections.set(clientId, {
-		"connection": connection
-	});
-
-	const payload = {
-		"method": "connect",
-		"clientId": clientId
-	};
-
-	connection.send(JSON.stringify(payload));
 });
 
-function newId(length) {
+function newId(_length) {
 	const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 	let result = "";
 	let i = 0;
 
-	while (i < length) {
+	while (i < _length) {
 		result += characters.charAt(Math.floor(Math.random() * characters.length));
 		i++;
 	}
@@ -160,14 +150,14 @@ function removePlayerFromGame(_gameId, _leavingPlayerId) {
 			"message": "You're not in any game!"
 		};
 
-		connections.get(_leavingPlayerId).connection.send(JSON.stringify(payload));
+		activeConnections.get(_leavingPlayerId).connection.send(JSON.stringify(payload));
 		return;
 	}
 
 	let i = 0;
 
 	for (const player of game.players) {
-		if (player.clientId === _leavingPlayerId) {
+		if (player.id === _leavingPlayerId) {
 			games[_gameId].players.splice(i, 1);
 			game = games[_gameId];
 			clientsInGame.delete(_leavingPlayerId);
@@ -188,6 +178,6 @@ function removePlayerFromGame(_gameId, _leavingPlayerId) {
 			"game": games[_gameId]
 		};
 
-		connections.get(player.clientId).connection.send(JSON.stringify(payload));
+		activeConnections.get(player.id).connection.send(JSON.stringify(payload));
 	}
 }

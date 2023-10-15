@@ -22,9 +22,9 @@
 		<div id="divBoard"></div>
 
 		<script>
-			let myClientId = null;
+			const ws = new WebSocket("ws://localhost:9090");
+			let thisClient = null;
 			let gameId = null;
-			let ws = new WebSocket("ws://localhost:9090");
 
 			// HTML Elements
 			const btnCreateGame = document.getElementById("btnCreateGame");
@@ -39,7 +39,7 @@
 			btnCreateGame.addEventListener("click", () => {
 				const payload = {
 					"method": "createGame",
-					"clientId": myClientId
+					"client": thisClient
 				}
 
 				ws.send(JSON.stringify(payload));
@@ -54,7 +54,7 @@
 			btnLeaveGame.addEventListener("click", () => {
 				const payload = {
 					"method": "leaveGame",
-					"clientId": myClientId,
+					"client": thisClient,
 					"gameId": gameId
 				}
 
@@ -67,27 +67,29 @@
 
 			// When server responds
 			ws.onmessage = message => {
-				const response = JSON.parse(message.data)
+				const response = JSON.parse(message.data);
+				console.log(response);
+				const method = response.method;
 
-				if (response.method === "error") {
+				if (method === "error") {
 					alert(response.message);
 					return;
 				}
 
 				// Connecting
-				if (response.method === "connect") {
-					myClientId = response.clientId;
+				if (method === "connect") {
+					thisClient = response.client;
 					return;
 				}
 
 				// Creating a game
-				if (response.method === "createGame") {
+				if (method === "createGame") {
 					joinGame(response.gameId);
 					return;
 				}
 
 				// Joining a game
-				if (response.method === "joinGame") {
+				if (method === "joinGame") {
 					gameId = response.game.id;
 					roomCode.innerHTML = `<b>Room code: </b>${gameId}`;
 					updatePlayers(response.game.players);
@@ -95,7 +97,7 @@
 				}
 
 				// A player left the game
-				if (response.method === "playerLeft") {
+				if (method === "playerLeft") {
 					console.log(response.game.players);
 					updatePlayers(response.game.players)
 					return;
@@ -105,7 +107,7 @@
 			function joinGame(_gameId) {
 				const payload = {
 					"method": "joinGame",
-					"clientId": myClientId,
+					"client": thisClient,
 					"gameId": _gameId
 				}
 
@@ -116,16 +118,15 @@
 				while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
 
 				let i = 0;
-				
+
 				_arrayPlayers.forEach(player => {
 					const div = document.createElement("div");
-					const text = player.clientId === myClientId ? `<b>You</b>` : player.clientId;
+					const text = player.id === thisClient.id ? `<b>You</b>` : player.id;
 
 					div.innerHTML = `<b>Player ${++i}: </b>${text}`;
 					divPlayers.appendChild(div);
 				});
 			}
-
 		</script>
 	</body>
 
