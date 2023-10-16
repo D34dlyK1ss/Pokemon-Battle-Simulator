@@ -1,27 +1,27 @@
 import express from "express";
 import { WebSocketServer } from "ws";
 
-const serverPort = process.env.SERVER_PORT || 9090;
+const serverPort = parseInt(process.env.SERVER_PORT || "9090");
 const wss = new WebSocketServer({ port: serverPort });
 wss.on("listening", () => {
 	console.log(`Server port: ${serverPort}`);
 });
 
 const app = express();
-const clientPort = process.env.CLIENT_PORT || 9091;
+const clientPort = parseInt(process.env.CLIENT_PORT || "9091");
 app.use(express.static("../app"));
 app.get("/", (_, res) => res.sendFile("index.html"));
 app.listen(clientPort, () => console.log(`App port: ${clientPort}`));
 
-const activeConnections = new Map();
-const clientsInGame = new Map();
+const activeConnections = new Map(); // key: CLient ID, value: ws
+const clientsInGame = new Map(); // key: Client ID, value: Game ID
 const games = {};
 
-wss.on("connection", ws => {
-	const id = newId(32);
+wss.on("connection", (ws) => {
+	const id = newId(16);
 	const clientData = { "id": id };
 	ws.clientData = clientData;
-	activeConnections.set(id, { "connection": ws });
+	activeConnections.set(id, ws);
 
 	const payload = {
 		"method": "connect",
@@ -36,10 +36,9 @@ wss.on("connection", ws => {
 		activeConnections.delete(ws.clientData.id);
 	});
 
-	ws.on("message", message => {
+	ws.on("message", (message) => {
 		const result = JSON.parse(message);
-		const method = result.method;
-		const client = activeConnections.get(result.client.id);
+		const method = result.method; // method is a property send by the client
 
 		// Client wants to create a game
 		if (method === "createGame") {
@@ -49,7 +48,7 @@ wss.on("connection", ws => {
 					"message": "You're already in a game!"
 				};
 
-				client.connection.send(JSON.stringify(payload));
+				ws.send(JSON.stringify(payload));
 				return;
 			}
 
@@ -65,7 +64,7 @@ wss.on("connection", ws => {
 				"gameId": newGameId
 			};
 
-			client.connection.send(JSON.stringify(payload));
+			ws.send(JSON.stringify(payload));
 			return;
 		}
 
@@ -79,7 +78,7 @@ wss.on("connection", ws => {
 					"message": "You're already in a game!"
 				};
 
-				client.connection.send(JSON.stringify(payload));
+				ws.send(JSON.stringify(payload));
 				return;
 			}
 
@@ -89,7 +88,7 @@ wss.on("connection", ws => {
 					"message": "That game doesn't exist!"
 				};
 
-				client.connection.send(JSON.stringify(payload));
+				ws.send(JSON.stringify(payload));
 				return;
 			}
 
@@ -99,7 +98,7 @@ wss.on("connection", ws => {
 					"message": "Game reached max players!"
 				};
 
-				client.connection.send(JSON.stringify(payload));
+				ws.send(JSON.stringify(payload));
 				return;
 			}
 
@@ -110,13 +109,18 @@ wss.on("connection", ws => {
 			clientsInGame.set(result.client.id, games[gameId].id);
 
 			const payload = {
-				"method": "joinGame",
 				"game": games[gameId]
 			};
-
-			// Tell every player someone joined
+			
 			games[gameId].players.forEach(player => {
-				activeConnections.get(player.id).connection.send(JSON.stringify(payload));
+				if (player.id === result.client.id) {
+					payload.method = "joinGame";
+					ws.send(JSON.stringify(payload));
+				}
+				else {
+					payload.method = "updateGame";
+					activeConnections.get(player.id).send(JSON.stringify(payload));
+				}
 			});
 			return;
 		}
@@ -125,11 +129,37 @@ wss.on("connection", ws => {
 			removePlayerFromGame(result.gameId, result.client.id);
 			return;
 		}
+
+		if (method === "sendChatMessage") {
+			const gameId = result.gameId;
+
+			if (!games[gameId]) {
+				const payload = {
+					"method": "error",
+					"message": "That game doesn't exist!"
+				};
+
+				ws.send(JSON.stringify(payload));
+				return;
+			}
+
+			const payload = {
+				"method": "updateChat",
+				"username": result.clientId,
+				"text": result.text
+			};
+
+			games[gameId].players.forEach((player) => {
+				activeConnections.get(player.id).send(JSON.stringify(payload));
+			});
+			return;
+		}
 	});
 });
 
 function newId(_length) {
-	const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	const characters =
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 	let result = "";
 	let i = 0;
 
@@ -142,24 +172,21 @@ function newId(_length) {
 }
 
 function removePlayerFromGame(_gameId, _leavingPlayerId) {
-	let game = games[_gameId];
-
-	if (!game) {
+	if (!games[_gameId]) {
 		const payload = {
 			"method": "error",
 			"message": "You're not in any game!"
 		};
 
-		activeConnections.get(_leavingPlayerId).connection.send(JSON.stringify(payload));
+		activeConnections.get(_leavingPlayerId).send(JSON.stringify(payload));
 		return;
 	}
 
 	let i = 0;
 
-	for (const player of game.players) {
+	for (const player of games[_gameId].players) {
 		if (player.id === _leavingPlayerId) {
 			games[_gameId].players.splice(i, 1);
-			game = games[_gameId];
 			clientsInGame.delete(_leavingPlayerId);
 			break;
 		}
@@ -171,13 +198,13 @@ function removePlayerFromGame(_gameId, _leavingPlayerId) {
 		return;
 	}
 
+	// Tell players to update their game
 	for (const player of games[_gameId].players) {
-		// Tell this player someone left
 		const payload = {
-			"method": "playerLeft",
+			"method": "updateGame",
 			"game": games[_gameId]
 		};
 
-		activeConnections.get(player.id).connection.send(JSON.stringify(payload));
+		activeConnections.get(player.id).send(JSON.stringify(payload));
 	}
 }

@@ -2,132 +2,21 @@
 <html lang="en">
 
 	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Who is it?™ Online</title>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Who is it?™</title>
 		<link rel="stylesheet" href="css/index.css" />
+		<script defer src="js/main.js"></script>
 	</head>
 
 	<body>
-		<h1>Who is it?™ Online</h1>
+		<h1>Who is it?™</h1>
 		<button id="btnCreateGame">New Game</button>
-		<br>
-		<button id="btnJoinGame">Join Game</button>
-		<input type="text" id="txtJoinGame" />
-		<br>
+		<div id="divJoinGame">
+			<button id="btnJoinGame">Join Game</button>
+			<input type="text" id="inputJoinGame" />
+		</div>
 		<button id="btnLeaveGame">Leave Game</button>
-		<br>
-		<p id="roomCode"></p>
-		<div id="divPlayers"></div>
-		<div id="divBoard"></div>
-
-		<script>
-			const ws = new WebSocket("ws://localhost:9090");
-			let thisClient = null;
-			let gameId = null;
-
-			// HTML Elements
-			const btnCreateGame = document.getElementById("btnCreateGame");
-			const btnJoinGame = document.getElementById("btnJoinGame");
-			const txtJoinGame = document.getElementById("txtJoinGame");
-			const btnLeaveGame = document.getElementById("btnLeaveGame");
-			const roomCode = document.getElementById("roomCode");
-			const divPlayers = document.getElementById("divPlayers");
-			const divBoard = document.getElementById("divBoard");
-
-			// Event listeners
-			btnCreateGame.addEventListener("click", () => {
-				const payload = {
-					"method": "createGame",
-					"client": thisClient
-				}
-
-				ws.send(JSON.stringify(payload));
-			});
-
-			btnJoinGame.addEventListener("click", () => {
-				if (!txtJoinGame.value) return alert("Please type a room code into the text box.");
-
-				joinGame(txtJoinGame.value);
-			});
-
-			btnLeaveGame.addEventListener("click", () => {
-				const payload = {
-					"method": "leaveGame",
-					"client": thisClient,
-					"gameId": gameId
-				}
-
-				ws.send(JSON.stringify(payload));
-				roomCode.innerHTML = '';
-				gameId = null;
-
-				while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
-			});
-
-			// When server responds
-			ws.onmessage = message => {
-				const response = JSON.parse(message.data);
-				console.log(response);
-				const method = response.method;
-
-				if (method === "error") {
-					alert(response.message);
-					return;
-				}
-
-				// Connecting
-				if (method === "connect") {
-					thisClient = response.client;
-					return;
-				}
-
-				// Creating a game
-				if (method === "createGame") {
-					joinGame(response.gameId);
-					return;
-				}
-
-				// Joining a game
-				if (method === "joinGame") {
-					gameId = response.game.id;
-					roomCode.innerHTML = `<b>Room code: </b>${gameId}`;
-					updatePlayers(response.game.players);
-					return;
-				}
-
-				// A player left the game
-				if (method === "playerLeft") {
-					console.log(response.game.players);
-					updatePlayers(response.game.players)
-					return;
-				}
-			}
-
-			function joinGame(_gameId) {
-				const payload = {
-					"method": "joinGame",
-					"client": thisClient,
-					"gameId": _gameId
-				}
-
-				ws.send(JSON.stringify(payload));
-			}
-
-			function updatePlayers(_arrayPlayers) {
-				while (divPlayers.firstChild) divPlayers.removeChild(divPlayers.firstChild);
-
-				let i = 0;
-
-				_arrayPlayers.forEach(player => {
-					const div = document.createElement("div");
-					const text = player.id === thisClient.id ? `<b>You</b>` : player.id;
-
-					div.innerHTML = `<b>Player ${++i}: </b>${text}`;
-					divPlayers.appendChild(div);
-				});
-			}
-		</script>
 	</body>
 
 </html>

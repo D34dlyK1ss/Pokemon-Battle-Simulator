@@ -20,7 +20,7 @@ td {
 	text-align: center;
 }
 
-#roomCode {
+#pRoomCode {
 	-webkit-user-select: text;
 	-ms-user-select: text;
 	user-select: text;
@@ -29,4 +29,17 @@ td {
 
 #divPlayers {
 	font-size: large;
+	height: 41px;
+	width: 260px;
+	border: 1px solid black;
+}
+
+#divChatHistory {
+	border: 1px solid black;
+	height: 300px;
+	width: 260px;
+}
+
+#inputMessage {
+	width: 254px;
 }
