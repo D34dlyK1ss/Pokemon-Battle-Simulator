@@ -1,5 +1,7 @@
 import express from "express";
 import { WebSocketServer } from "ws";
+import BadWordsFilter from "bad-words";
+import badwords from "badwords/array.js";
 
 const serverPort = parseInt(process.env.SERVER_PORT || "9090");
 const wss = new WebSocketServer({ port: serverPort });
@@ -13,11 +15,13 @@ app.use(express.static("../app"));
 app.get("/", (_, res) => res.sendFile("index.html"));
 app.listen(clientPort, () => console.log(`App port: ${clientPort}`));
 
-const activeConnections = new Map(); // key: CLient ID, value: ws
-const clientsInGame = new Map(); // key: Client ID, value: Game ID
+const activeConnections = new Map();	// key: CLient ID, value: ws
+const clientsInGame = new Map();		// key: Client ID, value: Game ID
 const games = {};
+const profanityFilter = new BadWordsFilter();
+profanityFilter.addWords(...badwords);
 
-wss.on("connection", (ws) => {
+wss.on("connection", ws => {
 	const id = newId(16);
 	const clientData = { "id": id };
 	ws.clientData = clientData;
@@ -38,12 +42,14 @@ wss.on("connection", (ws) => {
 
 	ws.on("message", (message) => {
 		const result = JSON.parse(message);
-		const method = result.method; // method is a property send by the client
+		const method = result.method;		// method is a property send by the client
 
 		// Client wants to create a game
 		if (method === "createGame") {
+			let payload = {};
+
 			if (clientsInGame.has(result.client.id)) {
-				const payload = {
+				payload = {
 					"method": "error",
 					"message": "You're already in a game!"
 				};
@@ -59,7 +65,7 @@ wss.on("connection", (ws) => {
 				"players": []
 			};
 
-			const payload = {
+			payload = {
 				"method": "createGame",
 				"gameId": newGameId
 			};
@@ -71,9 +77,10 @@ wss.on("connection", (ws) => {
 		// Client wants to join a game
 		if (method === "joinGame") {
 			const gameId = result.gameId;
+			let payload = {};
 
 			if (clientsInGame.has(result.client.id)) {
-				const payload = {
+				payload = {
 					"method": "error",
 					"message": "You're already in a game!"
 				};
@@ -83,7 +90,7 @@ wss.on("connection", (ws) => {
 			}
 
 			if (!games[gameId]) {
-				const payload = {
+				payload = {
 					"method": "error",
 					"message": "That game doesn't exist!"
 				};
@@ -93,7 +100,7 @@ wss.on("connection", (ws) => {
 			}
 
 			if (games[gameId].players.length >= 2) {
-				const payload = {
+				payload = {
 					"method": "error",
 					"message": "Game reached max players!"
 				};
@@ -108,17 +115,28 @@ wss.on("connection", (ws) => {
 
 			clientsInGame.set(result.client.id, games[gameId].id);
 
-			const payload = {
-				"game": games[gameId]
-			};
-			
 			games[gameId].players.forEach(player => {
 				if (player.id === result.client.id) {
-					payload.method = "joinGame";
+					payload = {
+						"method": "joinGame",
+						"game": games[gameId]
+					};
 					ws.send(JSON.stringify(payload));
 				}
 				else {
-					payload.method = "updateGame";
+					payload = {
+						"method": "updateGame",
+						"game": games[gameId]
+					};
+
+					activeConnections.get(player.id).send(JSON.stringify(payload));
+
+					payload = {
+						"method": "updateChat",
+						"type": "system",
+						"text": `<b>${result.client.id}</b> joined`
+					};
+
 					activeConnections.get(player.id).send(JSON.stringify(payload));
 				}
 			});
@@ -132,9 +150,10 @@ wss.on("connection", (ws) => {
 
 		if (method === "sendChatMessage") {
 			const gameId = result.gameId;
+			let payload = {};
 
 			if (!games[gameId]) {
-				const payload = {
+				payload = {
 					"method": "error",
 					"message": "That game doesn't exist!"
 				};
@@ -143,10 +162,11 @@ wss.on("connection", (ws) => {
 				return;
 			}
 
-			const payload = {
+			payload = {
 				"method": "updateChat",
+				"type": "user",
 				"username": result.clientId,
-				"text": result.text
+				"text": profanityFilter.clean(result.text)
 			};
 
 			games[gameId].players.forEach((player) => {
@@ -190,6 +210,7 @@ function removePlayerFromGame(_gameId, _leavingPlayerId) {
 			clientsInGame.delete(_leavingPlayerId);
 			break;
 		}
+
 		i++;
 	}
 
@@ -198,11 +219,20 @@ function removePlayerFromGame(_gameId, _leavingPlayerId) {
 		return;
 	}
 
-	// Tell players to update their game
+	let payload = {};
+
 	for (const player of games[_gameId].players) {
-		const payload = {
+		payload = {
 			"method": "updateGame",
 			"game": games[_gameId]
+		};
+
+		activeConnections.get(player.id).send(JSON.stringify(payload));
+
+		payload = {
+			"method": "updateChat",
+			"type": "system",
+			"text": `<b>${_leavingPlayerId}</b> left`
 		};
 
 		activeConnections.get(player.id).send(JSON.stringify(payload));
