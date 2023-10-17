@@ -79,7 +79,7 @@ ws.onmessage = (message) => {
 
 	// Chat was updated
 	if (method === "updateChat") {
-		updateChat(response.username, response.text);
+		updateChat(response.type, response.username, response.text);
 		return;
 	}
 };
@@ -97,7 +97,7 @@ function joinGame(_gameId) {
 function spawnRoomCode(_gameId) {
 	const divRoomCode = document.createElement("div")
 	divRoomCode.id = "divRoomCode";
-	divRoomCode.innerHTML = `<p id="pRoomCode"><b>Room code:</b> ${_gameId}</p>`;
+	divRoomCode.innerHTML = `<p id="pRoomCode"><b>Room code: </b>${_gameId}</p>`;
 	document.body.appendChild(divRoomCode);
 }
 
@@ -132,7 +132,7 @@ function spawnChat() {
 	inputMessage.placeholder = "Chat here...";
 
 	inputMessage.addEventListener("keydown", event => {
-		if (event.key === "Enter") {
+		if (inputMessage.value && event.key === "Enter") {
 			const payload = {
 				"method": "sendChatMessage",
 				"gameId": gameId,
@@ -148,14 +148,25 @@ function spawnChat() {
 	divChat.appendChild(inputMessage);
 }
 
-function updateChat(_name, _message) {
+function updateChat(_type, _name, _message) {
 	const divChatHistory = document.getElementById("divChatHistory");
-	const message = document.createElement("div")
-	message.className = "message";
-	_name = _name === thisClient.id ? 'You' : _name;
+	const message = document.createElement("div");
+	
+	if  (_type === "system") {
+		message.className = "message system";
+		message.innerHTML = _message;
+		divChatHistory.appendChild(message);
+		divChatHistory.scrollTop = divChatHistory.scrollHeight;
+		return;
+	}
 
-	message.innerHTML = `<b>${_name}:</b> ${_message}`;
-	divChatHistory.appendChild(message);
+	if  (_type === "user") {
+		message.className = "message user";
+		message.innerHTML = `<b>${_name === thisClient.id ? 'You' : _name}: </b>${_message}`;
+		divChatHistory.appendChild(message);
+		divChatHistory.scrollTop = divChatHistory.scrollHeight;
+		return;
+	}
 }
 
 function updateGame(_game) {
