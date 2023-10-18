@@ -1,7 +1,6 @@
 import express from "express";
 import { WebSocketServer } from "ws";
-import BadWordsFilter from "bad-words";
-import badwords from "badwords/array.js";
+import badWords from "badwords/array.js";
 
 const serverPort = parseInt(process.env.SERVER_PORT || "9090");
 const wss = new WebSocketServer({ port: serverPort });
@@ -15,11 +14,9 @@ app.use(express.static("../app"));
 app.get("/", (_, res) => res.sendFile("index.html"));
 app.listen(clientPort, () => console.log(`App port: ${clientPort}`));
 
-const activeConnections = new Map();	// key: CLient ID, value: ws
+const activeConnections = new Map();	// key: Client ID, value: ws
 const clientsInGame = new Map();		// key: Client ID, value: Game ID
 const games = {};
-const profanityFilter = new BadWordsFilter();
-profanityFilter.addWords(...badwords);
 
 wss.on("connection", ws => {
 	const id = newId(16);
@@ -166,7 +163,7 @@ wss.on("connection", ws => {
 				"method": "updateChat",
 				"type": "user",
 				"username": result.clientId,
-				"text": profanityFilter.clean(result.text)
+				"text": cleanMessage(result.text)
 			};
 
 			games[gameId].players.forEach((player) => {
@@ -178,8 +175,7 @@ wss.on("connection", ws => {
 });
 
 function newId(_length) {
-	const characters =
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+	const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 	let result = "";
 	let i = 0;
 
@@ -237,4 +233,27 @@ function removePlayerFromGame(_gameId, _leavingPlayerId) {
 
 		activeConnections.get(player.id).send(JSON.stringify(payload));
 	}
+}
+
+function cleanMessage(_message) {
+	let sanitizedMessage = _message;
+
+	for (const word of badWords) {
+		sanitizedMessage = sanitizedMessage.replace(/0|º/g, "o");
+		sanitizedMessage = sanitizedMessage.replace(/1|!/g, "i");
+		sanitizedMessage = sanitizedMessage.replace(/3|£|€|&/g, "e");
+		sanitizedMessage = sanitizedMessage.replace(/4|@|ª/g, "a");
+		sanitizedMessage = sanitizedMessage.replace(/5|\$|§/g, "s");
+		sanitizedMessage = sanitizedMessage.replace(/6|9/g, "g");
+		sanitizedMessage = sanitizedMessage.replace(/7|\+/g, "t");
+		sanitizedMessage = sanitizedMessage.replace(/8/g, "ate");
+
+		for (let i = 0; i <= sanitizedMessage.length - word.length; i++) {
+			const batch = sanitizedMessage.substr(i, word.length);
+
+			if (batch === word) _message = _message.slice(0, i) + "*".repeat(word.length) + _message.slice(i + word.length);
+		}
+	}
+
+	return _message;
 }
