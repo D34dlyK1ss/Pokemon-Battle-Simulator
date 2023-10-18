@@ -9,12 +9,12 @@ function makeBoard() {
 		cells[i].textContent = items[i];
 	}
 
-	// const answer = document.getElementById("myAnswer").innerText = items[Math.floor(Math.random() * names.length)];
+	const answer = document.getElementById("myAnswer").innerText = items[Math.floor(Math.random() * names.length)];
 }
 
-/*function toggleUpDown(id) {
+function toggleUpDown(id) {
 	if (document.getElementById(id).style.color == "limegreen") document.getElementById(id).style.color = "red";
 	else document.getElementById(id).style.color = "limegreen";
-}*/
+}
 
 makeBoard();
