@@ -67,6 +67,7 @@ ws.onmessage = (message) => {
 		spawnRoomCode(gameId);
 		spawnPlayers();
 		updatePlayers(response.game.players);
+		spawnBoard();
 		spawnChat();
 		return;
 	}
@@ -109,7 +110,7 @@ function spawnPlayers() {
 
 function spawnBoard() {
 	const divBoard = document.createElement("div")
-	divBoard.id = "divPlayers";
+	divBoard.id = "divBoard";
 	document.body.appendChild(divBoard);
 }
 
