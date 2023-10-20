@@ -1,6 +1,6 @@
 import express from "express";
 import { WebSocketServer } from "ws";
-import badWords from "badwords/array.js";
+import badWords from "./badWords.js";
 
 const serverPort = parseInt(process.env.SERVER_PORT || "9090");
 const wss = new WebSocketServer({ port: serverPort });
@@ -24,7 +24,7 @@ wss.on("connection", ws => {
 	ws.clientData = clientData;
 	activeConnections.set(id, ws);
 
-	const payload = {
+	let payload = {
 		"method": "connect",
 		"client": clientData
 	};
@@ -32,8 +32,8 @@ wss.on("connection", ws => {
 	ws.send(JSON.stringify(payload));
 
 	ws.on("close", () => {
-		const clientInGame = clientsInGame.get(ws.clientData.id);
-		if (clientInGame) removePlayerFromGame(clientInGame, ws.clientData.id);
+		const gameId = clientsInGame.get(ws.clientData.id);
+		if (gameId) removePlayerFromGame(gameId, ws.clientData.id);
 		activeConnections.delete(ws.clientData.id);
 	});
 
@@ -42,28 +42,17 @@ wss.on("connection", ws => {
 		const method = result.method;		// method is a property send by the client
 
 		// Client wants to create a game
-		if (method === "createGame") {
-			let payload = {};
-
-			if (clientsInGame.has(result.client.id)) {
-				payload = {
-					"method": "error",
-					"message": "You're already in a game!"
-				};
-
-				ws.send(JSON.stringify(payload));
-				return;
-			}
-
+		if (method === "newGame") {
 			const newGameId = newId(8);
 
 			games[newGameId] = {
 				"id": newGameId,
+				"status": "waiting",
 				"players": []
 			};
 
 			payload = {
-				"method": "createGame",
+				"method": "newGame",
 				"gameId": newGameId
 			};
 
@@ -74,17 +63,6 @@ wss.on("connection", ws => {
 		// Client wants to join a game
 		if (method === "joinGame") {
 			const gameId = result.gameId;
-			let payload = {};
-
-			if (clientsInGame.has(result.client.id)) {
-				payload = {
-					"method": "error",
-					"message": "You're already in a game!"
-				};
-
-				ws.send(JSON.stringify(payload));
-				return;
-			}
 
 			if (!games[gameId]) {
 				payload = {
@@ -122,8 +100,8 @@ wss.on("connection", ws => {
 				}
 				else {
 					payload = {
-						"method": "updateGame",
-						"game": games[gameId]
+						"method": "updatePlayers",
+						"players": games[gameId].players
 					};
 
 					activeConnections.get(player.id).send(JSON.stringify(payload));
@@ -140,6 +118,32 @@ wss.on("connection", ws => {
 			return;
 		}
 
+		if (method === "startGame") {
+			const gameId = result.gameId;
+			const items = ["Ana", "Rita", "José", "Rodrigo", "André", "Catarina", "Joana", "Diogo", "Susana", "Daniela", "Sara", "Xavier", "Filipe", "Gonçalo", "Sofia", "Vítor"];
+
+			games[gameId].status = "playing";
+			games[gameId].answers = {};
+			games[gameId].triesLeft = {};
+			games[gameId].players.forEach(player => {
+				const itemToGuess = items[Math.floor(Math.random() * items.length)];
+				const tries = 2;
+
+				games[gameId].answers[player.id] = itemToGuess;
+				games[gameId].triesLeft[player.id] = tries;
+
+				payload = {
+					"method": "startGame",
+					"game": games[gameId],
+					"category": items,
+					"yourItem": itemToGuess,
+					"tries": tries
+				};
+
+				activeConnections.get(player.id).send(JSON.stringify(payload));
+			});
+		}
+
 		if (method === "leaveGame") {
 			removePlayerFromGame(result.gameId, result.client.id);
 			return;
@@ -147,17 +151,6 @@ wss.on("connection", ws => {
 
 		if (method === "sendChatMessage") {
 			const gameId = result.gameId;
-			let payload = {};
-
-			if (!games[gameId]) {
-				payload = {
-					"method": "error",
-					"message": "That game doesn't exist!"
-				};
-
-				ws.send(JSON.stringify(payload));
-				return;
-			}
 
 			payload = {
 				"method": "updateChat",
@@ -166,10 +159,65 @@ wss.on("connection", ws => {
 				"text": cleanMessage(result.text)
 			};
 
-			games[gameId].players.forEach((player) => {
+			games[gameId].players.forEach(player => {
 				activeConnections.get(player.id).send(JSON.stringify(payload));
 			});
 			return;
+		}
+
+		if (method === "guess") {
+			const gameId = result.gameId;
+			const guesserId = result.clientId;
+			let rightAnswer = null;
+
+			Object.keys(games[gameId].answers).forEach(player => {
+				if (player !== guesserId) rightAnswer = games[gameId].answers[player];
+			});
+
+			games[gameId].triesLeft[guesserId]--;
+
+			if (result.guess.toLowerCase() === rightAnswer.toLowerCase()) {
+				games[gameId].winner = guesserId;
+
+				payload = {
+					"method": "gameWon",
+					"winner": guesserId
+				};
+
+				ws.send(JSON.stringify(payload));
+
+				payload = {
+					"method": "gameLost"
+				};
+
+				games[gameId].players.forEach(player => {
+					if (player.id !== guesserId) activeConnections.get(player.id).send(JSON.stringify(payload));
+				});
+			}
+			else if (games[gameId].triesLeft[guesserId] <= 0) {
+				payload = {
+					"method": "gameLost",
+					"winner": games[gameId].players.filter((playerId => playerId !== guesserId))
+				};
+
+				ws.send(JSON.stringify(payload));
+
+				payload = {
+					"method": "gameWon"
+				};
+
+				games[gameId].players.forEach(player => {
+					if (player.id !== guesserId) activeConnections.get(player.id).send(JSON.stringify(payload));
+				});
+			}
+			else {
+				payload = {
+					"method": "updateTries",
+					"nTries": games[gameId].triesLeft[guesserId]
+				};
+
+				ws.send(JSON.stringify(payload));
+			}
 		}
 	});
 });
@@ -188,21 +236,12 @@ function newId(_length) {
 }
 
 function removePlayerFromGame(_gameId, _leavingPlayerId) {
-	if (!games[_gameId]) {
-		const payload = {
-			"method": "error",
-			"message": "You're not in any game!"
-		};
-
-		activeConnections.get(_leavingPlayerId).send(JSON.stringify(payload));
-		return;
-	}
-
+	const game = games[_gameId];
 	let i = 0;
 
-	for (const player of games[_gameId].players) {
+	for (const player of game.players) {
 		if (player.id === _leavingPlayerId) {
-			games[_gameId].players.splice(i, 1);
+			game.players.splice(i, 1);
 			clientsInGame.delete(_leavingPlayerId);
 			break;
 		}
@@ -210,17 +249,17 @@ function removePlayerFromGame(_gameId, _leavingPlayerId) {
 		i++;
 	}
 
-	if (games[_gameId].players.length === 0) {
+	if (game.players.length === 0) {
 		delete games[_gameId];
 		return;
 	}
 
 	let payload = {};
 
-	for (const player of games[_gameId].players) {
+	for (const player of game.players) {
 		payload = {
-			"method": "updateGame",
-			"game": games[_gameId]
+			"method": "updatePlayers",
+			"players": game.players
 		};
 
 		activeConnections.get(player.id).send(JSON.stringify(payload));
