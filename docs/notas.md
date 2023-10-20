@@ -12,7 +12,7 @@
 
 - Sistema de nível e recompensas
 
-- Histórico com informção das partidas (data e hora, duração, vencedor, categoria)
+- Histórico com informação das partidas (data e hora, duração, vencedor, categoria)
 
 - Costumização da interface (Light/Dark mode, fundo, cor principal)
 
@@ -27,3 +27,5 @@
 - Modos de jogo (Sem limites, rápido)
 
 - Programa de referência
+
+- Sistema de Denúncia
