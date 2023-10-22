@@ -1,4 +1,4 @@
-const ws = new WebSocket("ws://localhost:9090");
+const ws = new WebSocket("ws://who-is-it.vercel.app:9090");
 
 window.addEventListener('load', () => {
 	spawnTitle();
