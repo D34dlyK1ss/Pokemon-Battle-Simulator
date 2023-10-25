@@ -176,10 +176,17 @@ wss.on("connection", ws => {
 
 			games[gameId].triesLeft[guesserId]--;
 
+			payload = {
+				"method": "updateTries",
+				"nTries": games[gameId].triesLeft[guesserId]
+			};
+
+			ws.send(JSON.stringify(payload));
+
 			if (result.guess.toLowerCase() === rightAnswer.toLowerCase()) {
 				games[gameId].winner = guesserId;
 
-				payload = {
+				let payload = {
 					"method": "gameWon",
 					"winner": guesserId
 				};
@@ -195,7 +202,7 @@ wss.on("connection", ws => {
 				});
 			}
 			else if (games[gameId].triesLeft[guesserId] <= 0) {
-				payload = {
+				let payload = {
 					"method": "gameLost",
 					"winner": games[gameId].players.filter((playerId => playerId !== guesserId))
 				};
@@ -210,14 +217,8 @@ wss.on("connection", ws => {
 					if (player.id !== guesserId) activeConnections.get(player.id).send(JSON.stringify(payload));
 				});
 			}
-			else {
-				payload = {
-					"method": "updateTries",
-					"nTries": games[gameId].triesLeft[guesserId]
-				};
 
-				ws.send(JSON.stringify(payload));
-			}
+			ws.send(JSON.stringify(payload));
 		}
 	});
 });

@@ -67,8 +67,10 @@ ws.onmessage = (message) => {
 		return;
 	}
 
+	// Number of tries left changed
 	if (method === "updateTries") {
-		updateTries(response.nTries)
+		updateTries(response.nTries);
+		return;
 	}
 
 	// Won the game
