@@ -1,6 +1,6 @@
 const ws = new WebSocket("ws://localhost:9090");
 
-window.addEventListener('load', () => {
+window.addEventListener("load", () => {
 	spawnTitle();
 	spawnMainMenu();
 });
@@ -92,7 +92,7 @@ function joinGame(_gameId) {
 	const payload = {
 		"method": "joinGame",
 		"client": thisClient,
-		"gameId": _gameId,
+		"gameId": _gameId
 	};
 	
 	ws.send(JSON.stringify(payload));
@@ -115,7 +115,7 @@ function spawnMainMenu() {
 	btnNewGame.addEventListener("click", () => {
 		const payload = {
 			"method": "newGame",
-			"client": thisClient,
+			"client": thisClient
 		};
 	
 		ws.send(JSON.stringify(payload));
@@ -131,7 +131,7 @@ function spawnMainMenu() {
 	btnJoinGame.textContent = "Join Game";
 
 	btnJoinGame.addEventListener("click", () => {
-		const inputJoinGame = document.getElementById("inputJoinGame")
+		const inputJoinGame = document.getElementById("inputJoinGame");
 		if (!inputJoinGame.value)
 			return alert("Please type a room code into the text box.");
 	
@@ -151,7 +151,7 @@ function spawnMainMenu() {
 }
 
 function spawnStartButton(_ownerId) {
-	const btnStart = document.createElement("button")
+	const btnStart = document.createElement("button");
 	btnStart.id = "btnStart";
 	btnStart.textContent = "Start";
 
@@ -159,7 +159,7 @@ function spawnStartButton(_ownerId) {
 		const payload = {
 			"method": "startGame",
 			"gameId": gameId
-		}
+		};
 
 		ws.send(JSON.stringify(payload));
 		document.getElementById("btnStart").remove();
@@ -172,7 +172,7 @@ function spawnStartButton(_ownerId) {
 }
 
 function spawnLeaveButton() {
-	const btnLeave = document.createElement("button")
+	const btnLeave = document.createElement("button");
 	btnLeave.id = "btnLeave";
 	btnLeave.textContent = "Leave";
 
@@ -197,14 +197,14 @@ function leaveGame() {
 }
 
 function spawnRoomCode() {
-	const divRoomCode = document.createElement("div")
+	const divRoomCode = document.createElement("div");
 	divRoomCode.id = "divRoomCode";
 	divRoomCode.innerHTML = `<p id="pRoomCode"><b>Room code: </b>${gameId}</p>`;
 	document.body.appendChild(divRoomCode);
 }
 
 function spawnPlayers(_players) {
-	const divPlayers = document.createElement("div")
+	const divPlayers = document.createElement("div");
 	divPlayers.id = "divPlayers";
 	document.body.appendChild(divPlayers);
 	
@@ -233,7 +233,7 @@ function spawnGame(_items, _yourItem, _tries) {
 			btnCell.addEventListener("click", () => {
 				if (btnCell.style.color === "limegreen") btnCell.style.color = "red";
 				else btnCell.style.color = "limegreen";
-			})
+			});
 
 			td.appendChild(btnCell);
 			tr.appendChild(td);
@@ -261,8 +261,8 @@ function spawnGame(_items, _yourItem, _tries) {
 				"method": "guess",
 				"gameId": gameId,
 				"clientId": thisClient.id,
-				"guess": inputGuess.value,
-			}
+				"guess": inputGuess.value
+			};
 
 			ws.send(JSON.stringify(payload));
 			document.getElementById("inputGuess").value = "";
@@ -281,15 +281,15 @@ function spawnGame(_items, _yourItem, _tries) {
 }
 
 function spawnChat() {
-	const divChat = document.createElement("div")
+	const divChat = document.createElement("div");
 	divChat.id = "divChat";
 	document.body.appendChild(divChat);
 
-	const chatTitle = document.createElement("h4")
+	const chatTitle = document.createElement("h4");
 	chatTitle.innerHTML = "CHAT";
 	divChat.appendChild(chatTitle);
 
-	const divChatHistory = document.createElement("div")
+	const divChatHistory = document.createElement("div");
 	divChatHistory.id = "divChatHistory";
 
 	divChat.appendChild(divChatHistory);
@@ -304,8 +304,8 @@ function spawnChat() {
 				"method": "sendChatMessage",
 				"gameId": gameId,
 				"clientId": thisClient.id,
-				"text": inputMessage.value,
-			}
+				"text": inputMessage.value
+			};
 
 			ws.send(JSON.stringify(payload));
 			document.getElementById("inputMessage").value = "";
@@ -329,7 +329,7 @@ function updateChat(_type, _name, _message) {
 
 	if (_type === "user") {
 		message.className = "message user";
-		message.innerHTML = `<b>${_name === thisClient.id ? 'You' : _name}: </b>${_message}`;
+		message.innerHTML = `<b>${_name === thisClient.id ? "You" : _name}: </b>${_message}`;
 		divChatHistory.appendChild(message);
 		divChatHistory.scrollTop = divChatHistory.scrollHeight;
 		return;
@@ -351,7 +351,7 @@ function updatePlayers(_arrayPlayers) {
 
 	_arrayPlayers.forEach(player => {
 		const div = document.createElement("div");
-		const text = player.id === thisClient.id ? `<b>You</b>` : player.id;
+		const text = player.id === thisClient.id ? "<b>You</b>" : player.id;
 
 		div.innerHTML = `<b>Player ${++i}: </b>${text}`;
 		divPlayers.appendChild(div);
@@ -364,7 +364,7 @@ function updatePlayers(_arrayPlayers) {
 }
 
 function updateTries(_nTries) {
-	document.getElementById("pTries").innerHTML = `Tries left: ${_nTries}`
+	document.getElementById("pTries").innerHTML = `Tries left: ${_nTries}`;
 }
 
 function clearScreen() {
