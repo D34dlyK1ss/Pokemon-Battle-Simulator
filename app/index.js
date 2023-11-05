@@ -1,6 +1,7 @@
 import express from "express";
 import { WebSocketServer } from "ws";
 import badWords from "./badWords.js";
+import mysql from "mysql2";
 
 const serverPort = parseInt(process.env.SERVER_PORT || "9090");
 const wss = new WebSocketServer({ port: serverPort });
@@ -13,6 +14,12 @@ const clientPort = parseInt(process.env.CLIENT_PORT || "9091");
 app.use(express.static("public"));
 app.get("/", (_, res) => res.sendFile("index.html"));
 app.listen(clientPort, () => console.log(`App port: ${clientPort}`));
+
+const db = mysql.createConnection({
+	host: "localhost",
+	user: "who_is_it_game",
+	database: "who_is_it"
+});
 
 const activeConnections = new Map();	// key: Client ID, value: ws
 const clientsInGame = new Map();		// key: Client ID, value: Game ID
