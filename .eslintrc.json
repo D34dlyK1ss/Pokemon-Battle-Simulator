@@ -26,6 +26,7 @@
 			"error",
 			"always"
 		],
-		"comma-dangle": "error"
+		"comma-dangle": "error",
+		"no-unused-vars": "warn"
 	}
 }
