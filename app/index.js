@@ -10,7 +10,7 @@ wss.on("listening", () => {
 
 const app = express();
 const clientPort = parseInt(process.env.CLIENT_PORT || "9091");
-app.use(express.static("../public"));
+app.use(express.static("public"));
 app.get("/", (_, res) => res.sendFile("index.html"));
 app.listen(clientPort, () => console.log(`App port: ${clientPort}`));
 
