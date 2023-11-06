@@ -5,15 +5,11 @@ import mysql from "mysql2";
 
 const serverPort = parseInt(process.env.SERVER_PORT || "9090");
 const wss = new WebSocketServer({ port: serverPort });
-wss.on("listening", () => {
-	console.log(`Server port: ${serverPort}`);
-});
-
 const app = express();
 const clientPort = parseInt(process.env.CLIENT_PORT || "9091");
 app.use(express.static("public"));
-app.get("/", (_, res) => res.sendFile("index.html"));
-app.listen(clientPort, () => console.log(`App port: ${clientPort}`));
+app.get("/", (req, res) => res.sendFile("index.html"));
+app.listen(clientPort);
 
 const db = mysql.createConnection({
 	host: "localhost",
@@ -21,27 +17,28 @@ const db = mysql.createConnection({
 	database: "who_is_it"
 });
 
-const activeConnections = new Map();	// key: Client ID, value: ws
-const clientsInGame = new Map();		// key: Client ID, value: Game ID
+const activeConnections = new Map();	// key: connection ID, value: ws
+const clientsInGame = new Map();		// key: connection ID, value: game ID
 const games = {};
 
 wss.on("connection", ws => {
-	const id = newId(16);
-	const clientData = { "id": id };
-	ws.clientData = clientData;
+	const id = newId(32);
+	const connectionData = { "id": id };
+	ws.connectionData = connectionData;
 	activeConnections.set(id, ws);
+	console.log(logConnection(id));
 
 	let payload = {
 		"method": "connect",
-		"client": clientData
+		"client": connectionData
 	};
 
 	ws.send(JSON.stringify(payload));
 
 	ws.on("close", () => {
-		const gameId = clientsInGame.get(ws.clientData.id);
-		if (gameId) removePlayerFromGame(gameId, ws.clientData.id);
-		activeConnections.delete(ws.clientData.id);
+		const gameId = clientsInGame.get(ws.connectionData.id);
+		if (gameId) removePlayerFromGame(gameId, ws.connectionData.id);
+		activeConnections.delete(ws.connectionData.id);
 	});
 
 	ws.on("message", (message) => {
@@ -50,7 +47,10 @@ wss.on("connection", ws => {
 
 		// Client wants to create a game
 		if (method === "newGame") {
-			const newGameId = newId(8);
+			let newGameId = 0;
+
+			do newGameId = newId(8);
+			while (newGameId in games);
 
 			games[newGameId] = {
 				"id": newGameId,
@@ -303,4 +303,17 @@ function cleanMessage(_message) {
 	}
 
 	return _message;
+}
+
+function logConnection(id) {
+	const date = new Date();
+	const HH = date.getHours().toString().padStart(2, "0");
+	const mm = date.getMinutes().toString().padStart(2, "0");
+	const ss = date.getSeconds().toString().padStart(2, "0");
+	const sss = date.getMilliseconds().toString().padStart(3, "0");
+	const DD = date.getDate().toString().padStart(2, "0");
+	const MM = (date.getMonth() + 1).toString().padStart(2, "0");
+	const YYYY = date.getFullYear();
+
+	return `\u001b[30m[${DD}-${MM}-${YYYY} ${HH}:${mm}:${ss}.${sss}]\u001b[0m \u001b[36m${id}\u001b[0m`;
 }
