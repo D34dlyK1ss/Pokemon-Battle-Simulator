@@ -8,9 +8,9 @@
 
 - Histórico com informação das partidas (data e hora, duração, vencedor, categoria)
 
-- Lista de amigos
-
 - Categorias feitas por utilizadores públicas e privadas
+
+- Lista de amigos
 
 - Troféus (nome, recompensa, data e hora)
 
