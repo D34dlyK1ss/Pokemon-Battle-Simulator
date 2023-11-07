@@ -3,6 +3,7 @@ const ws = new WebSocket("ws://localhost:9090");
 window.addEventListener("load", () => {
 	spawnTitle();
 	spawnMainMenu();
+	//spawnLoginForm();
 });
 
 let thisClient = null;
