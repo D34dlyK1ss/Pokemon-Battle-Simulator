@@ -20,7 +20,7 @@
 
 - Sistema de Denúncia
 
-- Integração de login por Google, Facebook, Discord, Reddit, Twitter
+- Integração de login por Google, Facebook, Discord, Reddit, X
 
 - Ranking
 
