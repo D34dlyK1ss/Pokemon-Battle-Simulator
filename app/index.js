@@ -1,49 +1,133 @@
+import dotenv from "dotenv";
+import https from "https";
+import fs from "fs";
 import express from "express";
 import { WebSocketServer } from "ws";
-import badWords from "./badWords.js";
 import mysql from "mysql2";
+import badWords from "./badWords.js";
+dotenv.config();
 
-const serverPort = parseInt(process.env.SERVER_PORT || "9090");
-const wss = new WebSocketServer({ port: serverPort });
 const app = express();
-const clientPort = parseInt(process.env.CLIENT_PORT || "9091");
+const clientPort = parseInt(process.env.CLIENT_PORT);
 app.use(express.static("public"));
 app.get("/", (req, res) => res.sendFile("index.html"));
 app.listen(clientPort);
 
+const key = fs.readFileSync("key.pem");
+const cert = fs.readFileSync("cert.pem");
+const options = { key: key, cert: cert };
+const server = https.createServer(options, app);
+server.on("error", (err) => console.error(err));
+server.listen(parseInt(process.env.SERVER_PORT));
+
+const wss = new WebSocketServer({ server: server });
 const db = mysql.createConnection({
 	host: "localhost",
 	user: "who_is_it_game",
 	database: "who_is_it"
 });
-
 const activeConnections = new Map();	// key: connection ID, value: ws
-const clientsInGame = new Map();		// key: connection ID, value: game ID
+const loggedUsers = new Set();
+const usersInGame = new Map();			// key: user ID, value: game ID
 const games = {};
 
 wss.on("connection", ws => {
 	const id = newId(32);
-	const connectionData = { "id": id };
-	ws.connectionData = connectionData;
+
+	ws.connectionData = { id: id };
 	activeConnections.set(id, ws);
-	console.log(logConnection(id));
 
 	let payload = {
 		"method": "connect",
-		"client": connectionData
+		"connectionData": ws.connectionData
 	};
 
 	ws.send(JSON.stringify(payload));
 
 	ws.on("close", () => {
-		const gameId = clientsInGame.get(ws.connectionData.id);
-		if (gameId) removePlayerFromGame(gameId, ws.connectionData.id);
-		activeConnections.delete(ws.connectionData.id);
+		const username = ws.connectionData.username;
+		const connectionId = ws.connectionData.id;
+		const gameId = usersInGame.get(connectionId);
+
+		if (gameId) removePlayerFromGame(gameId, connectionId);
+
+		activeConnections.delete(connectionId);
+
+		if (loggedUsers.has(username)) {
+			loggedUsers.delete(username);
+			logoutToConsole(username);
+		}
 	});
 
 	ws.on("message", (message) => {
 		const result = JSON.parse(message);
 		const method = result.method;		// method is a property send by the client
+
+		// Client wants to login
+		if (method === "login") {
+			if (loggedUsers.has(result.username)) {
+				payload = {
+					"method": "error",
+					"type": "login",
+					"message": "Login failed. You're already logged in from another browser or device. Please log out from there first."
+				};
+
+				return ws.send(JSON.stringify(payload));
+			}
+
+			if (result.type === "auto") return doLogin(ws, result.username);
+
+			loginQuery(ws, result.username, result.password);
+			return;
+		}
+
+		// Client wants to logout
+		if (method === "logout") {
+			const username = result.username;
+
+			payload = {
+				"method": "loggedOut"
+			};
+
+			ws.send(JSON.stringify(payload));
+
+			loggedUsers.delete(username);
+			logoutToConsole(username);
+			return;
+		}
+
+		// Client wants to register
+		if (method === "register") {
+			const username = result.username;
+			const email = result.email;
+			const password = result.password;
+
+			db.query(
+				`SELECT id FROM user WHERE (username = '${username}' OR email = '${email}')`,
+				(err, res) => {
+					if (err) return console.error(err);
+					if (res.length > 0) {
+						payload = {
+							"method": "error",
+							"type": "register",
+							"message": "Register failed. Username or email are already in use."
+						};
+
+						return ws.send(JSON.stringify(payload));
+					}
+
+					db.query(
+						`INSERT INTO user (username, email, password) VALUES ('${username}', '${email}', SHA2('${password}', 256))`,
+						(err) => {
+							if (err) return console.error(err);
+
+							loginQuery(ws, username, password);
+						}
+					);
+					return;
+				}
+			);
+		}
 
 		// Client wants to create a game
 		if (method === "newGame") {
@@ -70,10 +154,12 @@ wss.on("connection", ws => {
 		// Client wants to join a game
 		if (method === "joinGame") {
 			const gameId = result.gameId;
+			const username = result.username;
 
 			if (!games[gameId]) {
 				payload = {
 					"method": "error",
+					"type": "joinGame",
 					"message": "That game doesn't exist!"
 				};
 
@@ -84,6 +170,7 @@ wss.on("connection", ws => {
 			if (games[gameId].players.length >= 2) {
 				payload = {
 					"method": "error",
+					"type": "joinGame",
 					"message": "Game reached max players!"
 				};
 
@@ -92,13 +179,14 @@ wss.on("connection", ws => {
 			}
 
 			games[gameId].players.push({
-				"id": result.client.id
+				"username": username,
+				"connectionId": result.connectionId
 			});
 
-			clientsInGame.set(result.client.id, games[gameId].id);
+			usersInGame.set(username, games[gameId].id);
 
 			games[gameId].players.forEach(player => {
-				if (player.id === result.client.id) {
+				if (player.username === username) {
 					payload = {
 						"method": "joinGame",
 						"game": games[gameId]
@@ -111,15 +199,15 @@ wss.on("connection", ws => {
 						"players": games[gameId].players
 					};
 
-					activeConnections.get(player.id).send(JSON.stringify(payload));
+					activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 
 					payload = {
 						"method": "updateChat",
 						"type": "system",
-						"text": `<b>${result.client.id}</b> joined`
+						"text": `<b>${username}</b> joined`
 					};
 
-					activeConnections.get(player.id).send(JSON.stringify(payload));
+					activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 				}
 			});
 			return;
@@ -129,6 +217,7 @@ wss.on("connection", ws => {
 			const gameId = result.gameId;
 			const items = ["Ana", "Rita", "José", "Rodrigo", "André", "Catarina", "Joana", "Diogo", "Susana", "Daniela", "Sara", "Xavier", "Filipe", "Gonçalo", "Sofia", "Vítor"];
 
+			games[gameId].items = items;
 			games[gameId].status = "playing";
 			games[gameId].answers = {};
 			games[gameId].triesLeft = {};
@@ -136,23 +225,38 @@ wss.on("connection", ws => {
 				const itemToGuess = items[Math.floor(Math.random() * items.length)];
 				const tries = 2;
 
-				games[gameId].answers[player.id] = itemToGuess;
-				games[gameId].triesLeft[player.id] = tries;
+				games[gameId].answers[player.username] = itemToGuess;
+				games[gameId].triesLeft[player.username] = tries;
 
 				payload = {
-					"method": "startGame",
+					"method": "loadGame",
 					"game": games[gameId],
 					"category": items,
 					"yourItem": itemToGuess,
 					"tries": tries
 				};
 
-				activeConnections.get(player.id).send(JSON.stringify(payload));
+				activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 			});
 		}
 
+		if (method === "loadGame") {
+			const gameId = result.gameId;
+			const username = result.username;
+
+			payload = {
+				"method": "loadGame",
+				"game": games[gameId],
+				"category": games[gameId].items,
+				"yourItem": games[gameId].answers[username],
+				"tries": games[gameId].triesLeft[username]
+			};
+
+			activeConnections.get(username).send(JSON.stringify(payload));
+		}
+
 		if (method === "leaveGame") {
-			removePlayerFromGame(result.gameId, result.client.id);
+			removePlayerFromGame(result.gameId, result.username);
 			return;
 		}
 
@@ -162,40 +266,40 @@ wss.on("connection", ws => {
 			payload = {
 				"method": "updateChat",
 				"type": "user",
-				"username": result.clientId,
+				"username": result.username,
 				"text": cleanMessage(result.text)
 			};
 
 			games[gameId].players.forEach(player => {
-				activeConnections.get(player.id).send(JSON.stringify(payload));
+				activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 			});
 			return;
 		}
 
 		if (method === "guess") {
 			const gameId = result.gameId;
-			const guesserId = result.clientId;
+			const guesserUsername = result.username;
 			let rightAnswer = null;
 
 			Object.keys(games[gameId].answers).forEach(player => {
-				if (player !== guesserId) rightAnswer = games[gameId].answers[player];
+				if (player !== guesserUsername) rightAnswer = games[gameId].answers[player];
 			});
 
-			games[gameId].triesLeft[guesserId]--;
+			games[gameId].triesLeft[guesserUsername]--;
 
 			payload = {
 				"method": "updateTries",
-				"nTries": games[gameId].triesLeft[guesserId]
+				"nTries": games[gameId].triesLeft[guesserUsername]
 			};
 
 			ws.send(JSON.stringify(payload));
 
 			if (result.guess.toLowerCase() === rightAnswer.toLowerCase()) {
-				games[gameId].winner = guesserId;
+				games[gameId].winner = guesserUsername;
 
 				let payload = {
 					"method": "gameWon",
-					"winner": guesserId
+					"winner": guesserUsername
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -205,13 +309,13 @@ wss.on("connection", ws => {
 				};
 
 				games[gameId].players.forEach(player => {
-					if (player.id !== guesserId) activeConnections.get(player.id).send(JSON.stringify(payload));
+					if (player.username !== guesserUsername) activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 				});
 			}
-			else if (games[gameId].triesLeft[guesserId] <= 0) {
+			else if (games[gameId].triesLeft[guesserUsername] <= 0) {
 				let payload = {
 					"method": "gameLost",
-					"winner": games[gameId].players.filter((playerId => playerId !== guesserId))
+					"winner": games[gameId].players.filter((playerId => playerId !== guesserUsername))
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -221,7 +325,7 @@ wss.on("connection", ws => {
 				};
 
 				games[gameId].players.forEach(player => {
-					if (player.id !== guesserId) activeConnections.get(player.id).send(JSON.stringify(payload));
+					if (player.username !== guesserUsername) activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 				});
 			}
 
@@ -243,14 +347,51 @@ function newId(_length) {
 	return result;
 }
 
-function removePlayerFromGame(_gameId, _leavingPlayerId) {
+function loginQuery(_ws, _username, _password) {
+	let payload = {};
+
+	db.query(
+		`SELECT username, email FROM user WHERE (username = '${_username}' OR email = '${_username}') AND password = SHA2('${_password}', 256)`,
+		(err, res) => {
+			if (err) return console.error(err);
+			if (res.length === 0) {
+				payload = {
+					"method": "error",
+					"type": "login",
+					"message": "Login failed. Username/email or password incorrect."
+				};
+
+				return _ws.send(JSON.stringify(payload));
+			}
+
+			doLogin(_ws, res[0].username);
+		}
+	);
+}
+
+function doLogin(_ws, _username) {
+	loggedUsers.add(_username);
+	loginToConsole(_username);
+
+	const payload = {
+		"method": "loggedIn",
+		"username": _username
+	};
+
+	_ws.connectionData.username = _username;
+	activeConnections.set(_ws.connectionData.id, _ws);
+
+	return _ws.send(JSON.stringify(payload));
+}
+
+function removePlayerFromGame(_gameId, _leavingPlayer) {
 	const game = games[_gameId];
 	let i = 0;
 
 	for (const player of game.players) {
-		if (player.id === _leavingPlayerId) {
+		if (player.username === _leavingPlayer) {
 			game.players.splice(i, 1);
-			clientsInGame.delete(_leavingPlayerId);
+			usersInGame.delete(_leavingPlayer);
 			break;
 		}
 
@@ -270,15 +411,15 @@ function removePlayerFromGame(_gameId, _leavingPlayerId) {
 			"players": game.players
 		};
 
-		activeConnections.get(player.id).send(JSON.stringify(payload));
+		activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 
 		payload = {
 			"method": "updateChat",
 			"type": "system",
-			"text": `<b>${_leavingPlayerId}</b> left`
+			"text": `<b>${_leavingPlayer}</b> left`
 		};
 
-		activeConnections.get(player.id).send(JSON.stringify(payload));
+		activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 	}
 }
 
@@ -305,7 +446,7 @@ function cleanMessage(_message) {
 	return _message;
 }
 
-function logConnection(id) {
+function dateTimeString() {
 	const date = new Date();
 	const HH = date.getHours().toString().padStart(2, "0");
 	const mm = date.getMinutes().toString().padStart(2, "0");
@@ -315,5 +456,13 @@ function logConnection(id) {
 	const MM = (date.getMonth() + 1).toString().padStart(2, "0");
 	const YYYY = date.getFullYear();
 
-	return `\u001b[30m[${DD}-${MM}-${YYYY} ${HH}:${mm}:${ss}.${sss}]\u001b[0m \u001b[36m${id}\u001b[0m`;
+	return `\u001b[30m[${DD}-${MM}-${YYYY} ${HH}:${mm}:${ss}.${sss}]\u001b[0m`;
+}
+
+function loginToConsole(_username) {
+	return console.log(`${dateTimeString()} \u001b[32m${_username}\u001b[0m`);
+}
+
+function logoutToConsole(_username) {
+	return console.log(`${dateTimeString()} \u001b[31m${_username}\u001b[0m`);
 }
