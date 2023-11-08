@@ -1,12 +1,10 @@
-connect();
-
-function connect() {
+function main() {
 	const ws = new WebSocket("wss://localhost:8443");
 	let thisConnection = null;
 	let gameId = null;
 
 	ws.onerror = (err) => console.error(err.message);
-	ws.onclose = () => setTimeout(connect(), 5000);
+	ws.onclose = () => setTimeout(main(), 5000);
 	ws.onmessage = (message) => {
 		const response = JSON.parse(message.data);
 		const method = response.method;
@@ -567,3 +565,5 @@ function connect() {
 		document.body.appendChild(title);
 	}	
 }
+
+main();
