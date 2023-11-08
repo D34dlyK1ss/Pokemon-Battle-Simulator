@@ -47,9 +47,9 @@ wss.on("connection", ws => {
 	ws.on("close", () => {
 		const username = ws.connectionData.username;
 		const connectionId = ws.connectionData.id;
-		const gameId = usersInGame.get(connectionId);
+		const gameId = usersInGame.get(username);
 
-		if (gameId) removePlayerFromGame(gameId, connectionId);
+		if (gameId) removePlayerFromGame(gameId, username);
 
 		activeConnections.delete(connectionId);
 
@@ -65,16 +65,6 @@ wss.on("connection", ws => {
 
 		// Client wants to login
 		if (method === "login") {
-			if (loggedUsers.has(result.username)) {
-				payload = {
-					"method": "error",
-					"type": "login",
-					"message": "Login failed. You're already logged in from another browser or device. Please log out from there first."
-				};
-
-				return ws.send(JSON.stringify(payload));
-			}
-
 			if (result.type === "auto") return doLogin(ws, result.username);
 
 			loginQuery(ws, result.username, result.password);
@@ -110,7 +100,7 @@ wss.on("connection", ws => {
 						payload = {
 							"method": "error",
 							"type": "register",
-							"message": "Register failed. Username or email are already in use."
+							"message": "Failed to register. Username or email are already in use."
 						};
 
 						return ws.send(JSON.stringify(payload));
@@ -131,6 +121,17 @@ wss.on("connection", ws => {
 
 		// Client wants to create a game
 		if (method === "newGame") {
+			if (usersInGame.has(result.username)) {
+				payload = {
+					"method": "error",
+					"type": "joinGame",
+					"message": "Failed to create a new game. You're already playing a game."
+				};
+
+				ws.send(JSON.stringify(payload));
+				return;
+			}
+
 			let newGameId = 0;
 
 			do newGameId = newId(8);
@@ -156,6 +157,17 @@ wss.on("connection", ws => {
 			const gameId = result.gameId;
 			const username = result.username;
 
+			if (usersInGame.has(result.username)) {
+				payload = {
+					"method": "error",
+					"type": "joinGame",
+					"message": "Failed to join a game. You're already playing a game."
+				};
+
+				ws.send(JSON.stringify(payload));
+				return;
+			}
+
 			if (!games[gameId]) {
 				payload = {
 					"method": "error",
@@ -171,7 +183,7 @@ wss.on("connection", ws => {
 				payload = {
 					"method": "error",
 					"type": "joinGame",
-					"message": "Game reached max players!"
+					"message": "Failed to join game. Game reached max players!"
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -358,7 +370,7 @@ function loginQuery(_ws, _username, _password) {
 				payload = {
 					"method": "error",
 					"type": "login",
-					"message": "Login failed. Username/email or password incorrect."
+					"message": "Failed to log in. Username/email or password incorrect."
 				};
 
 				return _ws.send(JSON.stringify(payload));
