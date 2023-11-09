@@ -21,12 +21,14 @@ function main() {
 			spawnTitle();
 			showLoginLayout();
 	
+			const id = localStorage.getItem("id");
 			const username = localStorage.getItem("username");
 	
 			if (username) {
 				const payload = {
 					"method": "login",
 					"type": "auto",
+					"id": id,
 					"username": username
 				};
 	
@@ -38,9 +40,12 @@ function main() {
 	
 		// User logged in
 		if (method === "loggedIn") {
+			const userId = response.userId;
 			const username = response.username;
 	
+			thisConnection.userId = userId;
 			thisConnection.username = username;
+			localStorage.setItem("id", userId);
 			localStorage.setItem("username", username);
 			showMainMenuLayout();
 			return;
@@ -48,9 +53,16 @@ function main() {
 	
 		// User logged out
 		if (method === "loggedOut") {
+			delete thisConnection.userId;
 			delete thisConnection.username;
+			localStorage.removeItem("id");
 			localStorage.removeItem("username");
 			showLoginLayout();
+			return;
+		}
+
+		if (method === "getCategoryList") {
+			showCategorySelectionLayout(response.categoryList);
 			return;
 		}
 	
@@ -67,18 +79,17 @@ function main() {
 			return;
 		}
 	
-		// Game started
-		if (method === "loadGame") {
+		// Game was updated
+		if (method === "updateGame") {
+			let items = response.game.items;
+			let yourItem = response.game.answers[thisConnection.username];
+			let tries = response.game.triesLeft[thisConnection.username];
+
 			gameId = response.game.id;
-			showGameLayout(response.category, response.yourItem, response.tries);
+			
+			showGameLayout(items, yourItem, tries);
 			return;
 		}
-	
-		// Game was updated
-		/*if (method === "updateGame") {
-			updateGame(response.game);
-			return;
-		}*/
 	
 		// Player joined or left
 		if (method === "updatePlayers") {
@@ -282,8 +293,7 @@ function main() {
 		btnNewGame.textContent = "New Game";
 		btnNewGame.addEventListener("click", () => {
 			const payload = {
-				"method": "newGame",
-				"username": thisConnection.username
+				"method": "getCategoryList"
 			};
 	
 			ws.send(JSON.stringify(payload));
@@ -330,6 +340,50 @@ function main() {
 		divMainMenu.appendChild(btnLogout);
 	
 		document.body.appendChild(divMainMenu);
+	}
+
+	function showCategorySelectionLayout(_categoryList) {
+		clearScreen();
+		const divCategorySelection = document.createElement("div");
+		divCategorySelection.id = "divCategorySelection";
+
+		const lblCategoryList = document.createElement("label");
+		lblCategoryList.htmlFor = "selCategoryList";
+		lblCategoryList.innerText = "Select a category: ";
+		divCategorySelection.appendChild(lblCategoryList);
+
+		const selCategoryList = document.createElement("select");
+		selCategoryList.id = "selCategoryList";
+		for (const category of _categoryList) {
+			const option = document.createElement("option");
+			option.value = category.id;
+			option.innerText = category.name;
+			selCategoryList.appendChild(option);
+		}
+		divCategorySelection.appendChild(selCategoryList);
+
+		divCategorySelection.appendChild(document.createElement("br"));
+
+		const btnCreateGame = document.createElement("button");
+		btnCreateGame.id = "btnCreateGame";
+		btnCreateGame.textContent = "Create Game";
+		divCategorySelection.appendChild(btnCreateGame);
+
+		btnCreateGame.addEventListener("click", () => {
+			const selectedCategory = _categoryList.find(c => c.id === parseInt(selCategoryList.value));
+			const payload = {
+				"method": "newGame",
+				"username": thisConnection.username,
+				"categoryId": parseInt(selectedCategory.id),
+				"categoryName": selectedCategory.name,
+				"items": selectedCategory.items
+			};
+	
+			ws.send(JSON.stringify(payload));
+		});
+		divCategorySelection.appendChild(btnCreateGame);
+
+		document.body.appendChild(divCategorySelection);
 	}
 	
 	function showLobbyLayout(_gameId, _owner, _playersArray) {
@@ -400,8 +454,8 @@ function main() {
 	}
 	
 	function showGameLayout(_items, _yourItem, _tries) {
-		document.getElementById("divRoomCode").remove();
-	
+		clearScreen();
+			
 		const divGame = document.createElement("div");
 		divGame.id = "divGame";
 	
@@ -412,13 +466,13 @@ function main() {
 		while (_items.length > 0) {
 			const tr = document.createElement("tr");
 	
-			let itemsInRow = _items.splice(0, 4);
+			let itemsInRow = _items.splice(0, 6);
 			for (const item of itemsInRow) {
 				const td = document.createElement("td");
 				const btnCell = document.createElement("button");
 	
 				btnCell.style.color = "limegreen";
-				btnCell.textContent = item;
+				btnCell.textContent = item.name;
 	
 				btnCell.addEventListener("click", () => {
 					if (btnCell.style.color === "limegreen") btnCell.style.color = "red";
@@ -525,13 +579,6 @@ function main() {
 			return;
 		}
 	}
-	
-	/*function updateGame(_game) {
-		if (_game.status == "waiting") {
-		}
-		if (_game.status == "playing") {
-		}
-	}*/
 	
 	function updatePlayers(_arrayPlayers) {
 		const divPlayers = document.getElementById("divPlayers");

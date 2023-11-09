@@ -27,14 +27,13 @@ const db = mysql.createConnection({
 	database: "who_is_it"
 });
 const activeConnections = new Map();	// key: connection ID, value: ws
-const loggedUsers = new Set();
 const usersInGame = new Map();			// key: user ID, value: game ID
-const games = {};
+const lobbies = {};
 
 wss.on("connection", ws => {
 	const id = newId(32);
 
-	ws.connectionData = { id: id };
+	ws.connectionData = { "id": id };
 	activeConnections.set(id, ws);
 
 	let payload = {
@@ -47,14 +46,12 @@ wss.on("connection", ws => {
 	ws.on("close", () => {
 		const username = ws.connectionData.username;
 		const connectionId = ws.connectionData.id;
-		const gameId = usersInGame.get(username);
-
-		if (gameId) removePlayerFromGame(gameId, username);
 
 		activeConnections.delete(connectionId);
 
-		if (loggedUsers.has(username)) {
-			loggedUsers.delete(username);
+		if (username) {
+			if (lobbies[username]) removePlayerFromGame(lobbies[username], username);
+
 			logoutToConsole(username);
 		}
 	});
@@ -65,7 +62,7 @@ wss.on("connection", ws => {
 
 		// Client wants to login
 		if (method === "login") {
-			if (result.type === "auto") return doLogin(ws, result.username);
+			if (result.type === "auto") return doLogin(ws, result.username, result.id);
 
 			loginQuery(ws, result.username, result.password);
 			return;
@@ -81,7 +78,6 @@ wss.on("connection", ws => {
 
 			ws.send(JSON.stringify(payload));
 
-			loggedUsers.delete(username);
 			logoutToConsole(username);
 			return;
 		}
@@ -119,6 +115,29 @@ wss.on("connection", ws => {
 			);
 		}
 
+		if (method === "getCategoryList") {
+			db.query(
+				"SELECT id, user_id, name, items, type FROM category",
+				(err, res) => {
+					if (err) return console.error(err);
+
+					const categoryList = [];
+
+					for (const category of res) {
+						categoryList.push(category);
+					}
+
+					payload = {
+						"method": "getCategoryList",
+						"categoryList": categoryList
+					};
+
+					ws.send(JSON.stringify(payload));
+					return;
+				}
+			);
+		}
+
 		// Client wants to create a game
 		if (method === "newGame") {
 			if (usersInGame.has(result.username)) {
@@ -135,11 +154,14 @@ wss.on("connection", ws => {
 			let newGameId = 0;
 
 			do newGameId = newId(8);
-			while (newGameId in games);
+			while (lobbies[newGameId]);
 
-			games[newGameId] = {
+			lobbies[newGameId] = {
 				"id": newGameId,
 				"status": "waiting",
+				"categoryId": result.categoryId,
+				"categoryName": result.categoryName,
+				"items": result.items,
 				"players": []
 			};
 
@@ -168,47 +190,48 @@ wss.on("connection", ws => {
 				return;
 			}
 
-			if (!games[gameId]) {
+			if (!lobbies[gameId]) {
 				payload = {
 					"method": "error",
 					"type": "joinGame",
-					"message": "That game doesn't exist!"
+					"message": "Failed to join a game. The game doesn't exist."
 				};
 
 				ws.send(JSON.stringify(payload));
 				return;
 			}
 
-			if (games[gameId].players.length >= 2) {
+			if (lobbies[gameId].players.length >= 2) {
 				payload = {
 					"method": "error",
 					"type": "joinGame",
-					"message": "Failed to join game. Game reached max players!"
+					"message": "Failed to join game. The game reached max players."
 				};
 
 				ws.send(JSON.stringify(payload));
 				return;
 			}
 
-			games[gameId].players.push({
+			lobbies[gameId].players.push({
+				"id": ws.connectionData.userId,
 				"username": username,
 				"connectionId": result.connectionId
 			});
 
-			usersInGame.set(username, games[gameId].id);
+			usersInGame.set(username, lobbies[gameId].id);
 
-			games[gameId].players.forEach(player => {
+			lobbies[gameId].players.forEach(player => {
 				if (player.username === username) {
 					payload = {
 						"method": "joinGame",
-						"game": games[gameId]
+						"game": lobbies[gameId]
 					};
 					ws.send(JSON.stringify(payload));
 				}
 				else {
 					payload = {
 						"method": "updatePlayers",
-						"players": games[gameId].players
+						"players": lobbies[gameId].players
 					};
 
 					activeConnections.get(player.connectionId).send(JSON.stringify(payload));
@@ -227,44 +250,36 @@ wss.on("connection", ws => {
 
 		if (method === "startGame") {
 			const gameId = result.gameId;
-			const items = ["Ana", "Rita", "José", "Rodrigo", "André", "Catarina", "Joana", "Diogo", "Susana", "Daniela", "Sara", "Xavier", "Filipe", "Gonçalo", "Sofia", "Vítor"];
+			const items = lobbies[gameId].items;
 
-			games[gameId].items = items;
-			games[gameId].status = "playing";
-			games[gameId].answers = {};
-			games[gameId].triesLeft = {};
-			games[gameId].players.forEach(player => {
-				const itemToGuess = items[Math.floor(Math.random() * items.length)];
+			lobbies[gameId].status = "playing";
+			lobbies[gameId].answers = {};
+			lobbies[gameId].triesLeft = {};
+
+			let itemsToGuess = [];
+			let i = 0;
+
+			do {
+				itemsToGuess[0] = Math.floor(Math.random() * items.length);
+				itemsToGuess[1] = Math.floor(Math.random() * items.length);
+			}
+			while (itemsToGuess[0] === itemsToGuess[1]);
+
+			lobbies[gameId].players.forEach(player => {
+				const itemToGuess = lobbies[gameId].items[itemsToGuess[i]].name;
 				const tries = 2;
 
-				games[gameId].answers[player.username] = itemToGuess;
-				games[gameId].triesLeft[player.username] = tries;
+				lobbies[gameId].answers[player.username] = itemToGuess;
+				lobbies[gameId].triesLeft[player.username] = tries;
 
 				payload = {
-					"method": "loadGame",
-					"game": games[gameId],
-					"category": items,
-					"yourItem": itemToGuess,
-					"tries": tries
+					"method": "updateGame",
+					"game": lobbies[gameId]
 				};
 
 				activeConnections.get(player.connectionId).send(JSON.stringify(payload));
+				i++;
 			});
-		}
-
-		if (method === "loadGame") {
-			const gameId = result.gameId;
-			const username = result.username;
-
-			payload = {
-				"method": "loadGame",
-				"game": games[gameId],
-				"category": games[gameId].items,
-				"yourItem": games[gameId].answers[username],
-				"tries": games[gameId].triesLeft[username]
-			};
-
-			activeConnections.get(username).send(JSON.stringify(payload));
 		}
 
 		if (method === "leaveGame") {
@@ -282,9 +297,10 @@ wss.on("connection", ws => {
 				"text": cleanMessage(result.text)
 			};
 
-			games[gameId].players.forEach(player => {
+			lobbies[gameId].players.forEach(player => {
 				activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 			});
+
 			return;
 		}
 
@@ -293,25 +309,22 @@ wss.on("connection", ws => {
 			const guesserUsername = result.username;
 			let rightAnswer = null;
 
-			Object.keys(games[gameId].answers).forEach(player => {
-				if (player !== guesserUsername) rightAnswer = games[gameId].answers[player];
+			Object.keys(lobbies[gameId].answers).forEach(player => {
+				if (player !== guesserUsername) rightAnswer = lobbies[gameId].answers[player];
 			});
 
-			games[gameId].triesLeft[guesserUsername]--;
+			lobbies[gameId].triesLeft[guesserUsername]--;
 
 			payload = {
 				"method": "updateTries",
-				"nTries": games[gameId].triesLeft[guesserUsername]
+				"nTries": lobbies[gameId].triesLeft[guesserUsername]
 			};
 
 			ws.send(JSON.stringify(payload));
 
 			if (result.guess.toLowerCase() === rightAnswer.toLowerCase()) {
-				games[gameId].winner = guesserUsername;
-
 				let payload = {
-					"method": "gameWon",
-					"winner": guesserUsername
+					"method": "gameWon"
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -320,14 +333,21 @@ wss.on("connection", ws => {
 					"method": "gameLost"
 				};
 
-				games[gameId].players.forEach(player => {
-					if (player.username !== guesserUsername) activeConnections.get(player.connectionId).send(JSON.stringify(payload));
+				lobbies[gameId].players.forEach(player => {
+					if (player.username === guesserUsername) {
+						lobbies[gameId].winner = guesserUsername;
+					}
+					else {
+						activeConnections.get(player.connectionId).send(JSON.stringify(payload));
+					}
 				});
+
+				return saveResultsToDatabase(lobbies[gameId]);
 			}
-			else if (games[gameId].triesLeft[guesserUsername] <= 0) {
+			else if (lobbies[gameId].triesLeft[guesserUsername] <= 0) {
 				let payload = {
 					"method": "gameLost",
-					"winner": games[gameId].players.filter((playerId => playerId !== guesserUsername))
+					"winner": lobbies[gameId].players.filter((playerId => playerId !== guesserUsername))
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -336,12 +356,14 @@ wss.on("connection", ws => {
 					"method": "gameWon"
 				};
 
-				games[gameId].players.forEach(player => {
+				lobbies[gameId].players.forEach(player => {
 					if (player.username !== guesserUsername) activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 				});
+
+				return saveResultsToDatabase(lobbies[gameId]);
 			}
 
-			ws.send(JSON.stringify(payload));
+			return ws.send(JSON.stringify(payload));
 		}
 	});
 });
@@ -363,7 +385,7 @@ function loginQuery(_ws, _username, _password) {
 	let payload = {};
 
 	db.query(
-		`SELECT username, email FROM user WHERE (username = '${_username}' OR email = '${_username}') AND password = SHA2('${_password}', 256)`,
+		`SELECT id, username, email FROM user WHERE (username = '${_username}' OR email = '${_username}') AND password = SHA2('${_password}', 256)`,
 		(err, res) => {
 			if (err) return console.error(err);
 			if (res.length === 0) {
@@ -376,28 +398,35 @@ function loginQuery(_ws, _username, _password) {
 				return _ws.send(JSON.stringify(payload));
 			}
 
-			doLogin(_ws, res[0].username);
+			doLogin(_ws, res[0].username, res[0].id);
 		}
 	);
 }
 
-function doLogin(_ws, _username) {
-	loggedUsers.add(_username);
+function doLogin(_ws, _username, _id) {
 	loginToConsole(_username);
 
-	const payload = {
+	let payload = {
 		"method": "loggedIn",
+		"userId": _id,
 		"username": _username
 	};
 
 	_ws.connectionData.username = _username;
-	activeConnections.set(_ws.connectionData.id, _ws);
+	_ws.connectionData.userId = _id;
+	_ws.send(JSON.stringify(payload));
 
-	return _ws.send(JSON.stringify(payload));
+	return activeConnections.set(_ws.connectionData.id, _ws);
 }
 
 function removePlayerFromGame(_gameId, _leavingPlayer) {
-	const game = games[_gameId];
+	const game = lobbies[_gameId];
+
+	if (game.players.length === 0) {
+		delete lobbies[_gameId];
+		return;
+	}
+	
 	let i = 0;
 
 	for (const player of game.players) {
@@ -406,13 +435,19 @@ function removePlayerFromGame(_gameId, _leavingPlayer) {
 			usersInGame.delete(_leavingPlayer);
 			break;
 		}
+		if (player.username !== _leavingPlayer && lobbies[_gameId].status === "playing") {
+			lobbies[_leavingPlayer].winner = player.username;
+
+			payload = {
+				"method": "gameWon"
+			};
+
+			activeConnections.get(player.connectionId).send(JSON.stringify(payload));
+
+			saveResultsToDatabase(lobbies[_leavingPlayer]);
+		}
 
 		i++;
-	}
-
-	if (game.players.length === 0) {
-		delete games[_gameId];
-		return;
 	}
 
 	let payload = {};
@@ -435,6 +470,26 @@ function removePlayerFromGame(_gameId, _leavingPlayer) {
 	}
 }
 
+function saveResultsToDatabase(_game) {
+	const categoryId = _game.categoryId;
+	const player1 = _game.players[0];
+	const player2 = _game.players[1];
+	const playerId1 = player1.id;
+	const playerId2 = player2.id;
+	const playerUsername1 = player1.username;
+	const playerUsername2 = player2.username;
+	const playerTries1 = 2 - _game.triesLeft[playerUsername1];
+	const playerTries2 = 2 - _game.triesLeft[playerUsername2];
+	const winner = _game.winner;
+
+	db.query(
+		`INSERT INTO game_match (category_id, player1_id,  player2_id, player1_tries,  player2_tries, duration, winner) VALUES (${categoryId}, ${playerId1}, ${playerId2}, ${playerTries1}, ${playerTries2}, 0, ${winner.id})`,
+		(err) => {
+			if (err) return console.error(err);
+		}
+	);
+}
+
 function cleanMessage(_message) {
 	let sanitizedMessage = _message;
 
@@ -451,7 +506,7 @@ function cleanMessage(_message) {
 		for (let i = 0; i <= sanitizedMessage.length - word.length; i++) {
 			const batch = sanitizedMessage.substr(i, word.length);
 
-			if (batch === word) _message = _message.slice(0, i) + "*".repeat(word.length) + _message.slice(i + word.length);
+			if (batch.toLowerCase() === word) _message = _message.slice(0, i) + "*".repeat(word.length) + _message.slice(i + word.length);
 		}
 	}
 
@@ -468,7 +523,7 @@ function dateTimeString() {
 	const MM = (date.getMonth() + 1).toString().padStart(2, "0");
 	const YYYY = date.getFullYear();
 
-	return `\u001b[30m[${DD}-${MM}-${YYYY} ${HH}:${mm}:${ss}.${sss}]\u001b[0m`;
+	return `${DD}-${MM}-${YYYY} ${HH}:${mm}:${ss}.${sss}`;
 }
 
 function loginToConsole(_username) {
