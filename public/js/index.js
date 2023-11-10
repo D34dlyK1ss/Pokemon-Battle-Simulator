@@ -154,6 +154,9 @@ function main() {
 		const inputUsername = document.createElement("input");
 		inputUsername.id = "inputUsername";
 		inputUsername.type = "text";
+		inputUsername.addEventListener("keydown", event => {
+			if (event.key === "Enter") document.getElementById("btnLogin").click();
+		});
 		divLogin.appendChild(inputUsername);
 	
 		const pPassword = document.createElement("p");
@@ -163,6 +166,9 @@ function main() {
 		const inputPassword = document.createElement("input");
 		inputPassword.id = "inputPassword";
 		inputPassword.type = "password";
+		inputPassword.addEventListener("keydown", event => {
+			if (event.key === "Enter") document.getElementById("btnLogin").click();
+		});
 		divLogin.appendChild(inputPassword);
 	
 		divLogin.appendChild(document.createElement("br"));
@@ -287,6 +293,14 @@ function main() {
 		clearScreen();
 		const divMainMenu = document.createElement("div");
 		divMainMenu.id = "divMainMenu";
+
+		const divProfile = document.createElement("div");
+		divProfile.id = "divProfile";
+		const pUsername =  document.createElement("p");
+		pUsername.id = "pUsername";
+		pUsername.innerHTML = `<h3>${thisConnection.username}</h3>`;
+		divProfile.appendChild(pUsername);
+		divMainMenu.appendChild(divProfile);
 	
 		const btnNewGame = document.createElement("button");
 		btnNewGame.id = "btnNewGame";
@@ -302,11 +316,9 @@ function main() {
 	
 		const divJoinGame = document.createElement("div");
 		divJoinGame.id = "divJoinGame";
-	
 		const btnJoinGame = document.createElement("button");
 		btnJoinGame.id = "btnJoinGame";
 		btnJoinGame.textContent = "Join Game";
-	
 		btnJoinGame.addEventListener("click", () => {
 			const inputJoinGame = document.getElementById("inputJoinGame");
 			if (!inputJoinGame.value)
@@ -315,14 +327,14 @@ function main() {
 			joinGame(inputJoinGame.value);
 			inputJoinGame.value = "";
 		});
-	
 		divJoinGame.appendChild(btnJoinGame);
-	
 		const inputJoinGame = document.createElement("input");
 		inputJoinGame.id = "inputJoinGame";
 		inputJoinGame.type = "text";
-		divJoinGame.appendChild(inputJoinGame);
-	
+		inputJoinGame.addEventListener("keydown", event => {
+			if (event.key === "Enter") btnJoinGame.click();
+		});
+		divJoinGame.appendChild(inputJoinGame);	
 		divMainMenu.appendChild(divJoinGame);
 	
 		const btnLogout = document.createElement("button");

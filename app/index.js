@@ -50,7 +50,8 @@ wss.on("connection", ws => {
 		activeConnections.delete(connectionId);
 
 		if (username) {
-			if (lobbies[username]) removePlayerFromGame(lobbies[username], username);
+			const gameId = usersInGame.get(username);
+			if (lobbies[gameId]) removePlayerFromGame(lobbies[gameId].id, username);
 
 			logoutToConsole(username);
 		}
@@ -253,6 +254,7 @@ wss.on("connection", ws => {
 			const items = lobbies[gameId].items;
 
 			lobbies[gameId].status = "playing";
+			lobbies[gameId].started = Date.now();
 			lobbies[gameId].answers = {};
 			lobbies[gameId].triesLeft = {};
 
@@ -323,6 +325,9 @@ wss.on("connection", ws => {
 			ws.send(JSON.stringify(payload));
 
 			if (result.guess.toLowerCase() === rightAnswer.toLowerCase()) {
+				lobbies[gameId].status = "ended";
+				lobbies[gameId].ended = Date.now();
+
 				let payload = {
 					"method": "gameWon"
 				};
@@ -335,7 +340,7 @@ wss.on("connection", ws => {
 
 				lobbies[gameId].players.forEach(player => {
 					if (player.username === guesserUsername) {
-						lobbies[gameId].winner = guesserUsername;
+						lobbies[gameId].winner = player;
 					}
 					else {
 						activeConnections.get(player.connectionId).send(JSON.stringify(payload));
@@ -420,53 +425,58 @@ function doLogin(_ws, _username, _id) {
 }
 
 function removePlayerFromGame(_gameId, _leavingPlayer) {
-	const game = lobbies[_gameId];
-
-	if (game.players.length === 0) {
-		delete lobbies[_gameId];
-		return;
-	}
-	
 	let i = 0;
 
-	for (const player of game.players) {
-		if (player.username === _leavingPlayer) {
-			game.players.splice(i, 1);
-			usersInGame.delete(_leavingPlayer);
+	if (!lobbies[_gameId]) return;
+
+	for (const player of lobbies[_gameId].players) {
+		usersInGame.delete(_leavingPlayer);
+
+		if (lobbies[_gameId].status === "pending" && player.username === _leavingPlayer) {
+			lobbies[_gameId].players.splice(i, 1);
 			break;
 		}
-		if (player.username !== _leavingPlayer && lobbies[_gameId].status === "playing") {
-			lobbies[_leavingPlayer].winner = player.username;
+		if (lobbies[_gameId].status === "playing" && player.username !== _leavingPlayer) {
+			lobbies[_gameId].status = "ended";
+			lobbies[_gameId].ended = Date.now();
+			lobbies[_gameId].winner = player;
 
-			payload = {
+			const payload = {
 				"method": "gameWon"
 			};
 
 			activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 
-			saveResultsToDatabase(lobbies[_leavingPlayer]);
+			saveResultsToDatabase(lobbies[_gameId]);
+			delete lobbies[_gameId];
+			break;
 		}
 
 		i++;
 	}
 
-	let payload = {};
+	if (!lobbies[_gameId]) return;
 
-	for (const player of game.players) {
-		payload = {
-			"method": "updatePlayers",
-			"players": game.players
-		};
+	if (lobbies[_gameId].players.length === 0) delete lobbies[_gameId];
+	else {
+		let payload = {};
 
-		activeConnections.get(player.connectionId).send(JSON.stringify(payload));
+		for (const player of lobbies[_gameId].players) {
+			payload = {
+				"method": "updatePlayers",
+				"players": lobbies[_gameId].players
+			};
 
-		payload = {
-			"method": "updateChat",
-			"type": "system",
-			"text": `<b>${_leavingPlayer}</b> left`
-		};
+			activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 
-		activeConnections.get(player.connectionId).send(JSON.stringify(payload));
+			payload = {
+				"method": "updateChat",
+				"type": "system",
+				"text": `<b>${_leavingPlayer}</b> left`
+			};
+
+			activeConnections.get(player.connectionId).send(JSON.stringify(payload));
+		}
 	}
 }
 
@@ -480,10 +490,11 @@ function saveResultsToDatabase(_game) {
 	const playerUsername2 = player2.username;
 	const playerTries1 = 2 - _game.triesLeft[playerUsername1];
 	const playerTries2 = 2 - _game.triesLeft[playerUsername2];
+	const duration = (_game.ended - _game.started) / 1000;
 	const winner = _game.winner;
 
 	db.query(
-		`INSERT INTO game_match (category_id, player1_id,  player2_id, player1_tries,  player2_tries, duration, winner) VALUES (${categoryId}, ${playerId1}, ${playerId2}, ${playerTries1}, ${playerTries2}, 0, ${winner.id})`,
+		`INSERT INTO game_match (category_id, player1_id,  player2_id, player1_tries,  player2_tries, duration, winner) VALUES (${categoryId}, ${playerId1}, ${playerId2}, ${playerTries1}, ${playerTries2}, ${duration}, ${winner.id})`,
 		(err) => {
 			if (err) return console.error(err);
 		}
