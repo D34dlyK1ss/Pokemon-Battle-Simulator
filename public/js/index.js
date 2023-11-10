@@ -291,6 +291,7 @@ function main() {
 	
 	function showMainMenuLayout() {
 		clearScreen();
+
 		const divMainMenu = document.createElement("div");
 		divMainMenu.id = "divMainMenu";
 
@@ -356,6 +357,7 @@ function main() {
 
 	function showCategorySelectionLayout(_categoryList) {
 		clearScreen();
+
 		const divCategorySelection = document.createElement("div");
 		divCategorySelection.id = "divCategorySelection";
 
@@ -379,8 +381,6 @@ function main() {
 		const btnCreateGame = document.createElement("button");
 		btnCreateGame.id = "btnCreateGame";
 		btnCreateGame.textContent = "Create Game";
-		divCategorySelection.appendChild(btnCreateGame);
-
 		btnCreateGame.addEventListener("click", () => {
 			const selectedCategory = _categoryList.find(c => c.id === parseInt(selCategoryList.value));
 			const payload = {
@@ -394,6 +394,16 @@ function main() {
 			ws.send(JSON.stringify(payload));
 		});
 		divCategorySelection.appendChild(btnCreateGame);
+		
+		divCategorySelection.appendChild(document.createElement("br"));
+
+		const btnBack = document.createElement("button");
+		btnBack.id = "btnBack";
+		btnBack.textContent = "Back";
+		btnBack.addEventListener("click", () => {
+			showMainMenuLayout();
+		});
+		divCategorySelection.appendChild(btnBack);
 
 		document.body.appendChild(divCategorySelection);
 	}
