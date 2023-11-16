@@ -1,24 +1,39 @@
 function main() {
 	const ws = new WebSocket("wss://localhost:8443");
+	const domainURL = "https://localhost:8443";
 	let thisConnection = null;
 	let gameId = null;
 
-	ws.onerror = (err) => console.error(err);
-	ws.onclose = () => setTimeout(main(), 5000);
+	ws.onclose = () => setTimeout(main(), 2000);
 	ws.onmessage = (message) => {
 		const response = JSON.parse(message.data);
 		const method = response.method;
 
 		if (method === "error") {
 			alert(response.message);
+
+			if (response.type === "recoveringAccount") window.location.replace(domainURL);
+
 			return;
 		}
 
 		// Connection was made
 		if (method === "connect") {
-			thisConnection = response.connectionData;
+			const recoveryCode = getURLParameter("password_recovery");
 
+			thisConnection = response.connectionData;
 			spawnTitle();
+
+			if (recoveryCode) {
+				const payload = {
+					"method": "checkRecoveryCode",
+					"recoveryCode": recoveryCode
+				};
+				
+				ws.send(JSON.stringify(payload));
+				return;
+			}
+
 			showLoginLayout();
 
 			const id = localStorage.getItem("id");
@@ -35,6 +50,17 @@ function main() {
 				ws.send(JSON.stringify(payload));
 			}
 
+			return;
+		}
+
+		if (method === "recoveringAccount") {
+			showNewPasswordLayout(response.recoveryCode);
+			return;
+		}
+
+		if (method === "accountRecovered") {
+			alert("Account password changed successfully!");
+			window.location.replace(domainURL);
 			return;
 		}
 
@@ -86,7 +112,6 @@ function main() {
 			let tries = response.game.triesLeft[thisConnection.username];
 
 			gameId = response.game.id;
-
 			showGameLayout(items, yourItem, tries);
 			return;
 		}
@@ -157,6 +182,7 @@ function main() {
 		const inputUsername = document.createElement("input");
 		inputUsername.id = "inputUsername";
 		inputUsername.type = "text";
+		inputUsername.placeholder = "Username / Email";
 		inputUsername.addEventListener("keydown", event => {
 			if (event.key === "Enter") document.getElementById("btnLogin").click();
 		});
@@ -175,6 +201,7 @@ function main() {
 		const inputPassword = document.createElement("input");
 		inputPassword.id = "inputPassword";
 		inputPassword.type = "password";
+		inputPassword.placeholder = "Password";
 		inputPassword.addEventListener("keydown", event => {
 			if (event.key === "Enter") document.getElementById("btnLogin").click();
 		});
@@ -185,7 +212,6 @@ function main() {
 
 		const btnLogin = document.createElement("button");
 		btnLogin.id = "btnLogin";
-		btnLogin.type = "submit";
 		btnLogin.textContent = "Login";
 		btnLogin.addEventListener("click", () => {
 			const inputUsername = document.getElementById("inputUsername");
@@ -208,23 +234,23 @@ function main() {
 
 		divLogin.appendChild(document.createElement("br"));
 
-		const aRecover = document.createElement("a");
-		aRecover.href = "#";
+		const aRecover = document.createElement("span");
+		aRecover.className = "link";
 		aRecover.innerText = "Forgot password?";
 		aRecover.addEventListener("click", () => {
-			//showRecoverLayout();
+			showAccountRecoveryLayout();
 		});
 		divLogin.appendChild(aRecover);
 
 		divLogin.appendChild(document.createElement("br"));
 
-		const aRegister = document.createElement("a");
-		aRegister.href = "#";
-		aRegister.innerText = "I want to register.";
-		aRegister.addEventListener("click", () => {
+		const spanRegister = document.createElement("span");
+		spanRegister.className = "link";
+		spanRegister.innerText = "I want to register.";
+		spanRegister.addEventListener("click", () => {
 			showRegisterLayout();
 		});
-		divLogin.appendChild(aRegister);
+		divLogin.appendChild(spanRegister);
 
 		document.body.appendChild(divLogin);
 	}
@@ -232,12 +258,12 @@ function main() {
 	function showRegisterLayout() {
 		clearScreen();
 
-		const divRegister = document.createElement("divv");
+		const divRegister = document.createElement("div");
 		divRegister.id = "divRegister";
 
 		const lblUsername = document.createElement("label");
 		lblUsername.innerText = "Username";
-		lblUsername.htmlfor = "inputUsername";
+		lblUsername.htmlFor = "inputUsername";
 		divRegister.appendChild(lblUsername);
 
 		divRegister.appendChild(document.createElement("br"));
@@ -245,6 +271,7 @@ function main() {
 		const inputUsername = document.createElement("input");
 		inputUsername.id = "inputUsername";
 		inputUsername.type = "text";
+		inputUsername.placeholder = "Username";
 		divRegister.appendChild(inputUsername);
 
 		divRegister.appendChild(document.createElement("br"));
@@ -252,7 +279,7 @@ function main() {
 
 		const lblEmail = document.createElement("label");
 		lblEmail.innerText = "Email";
-		lblEmail.htmlfor = "inputEmail";
+		lblEmail.htmlFor = "inputEmail";
 		divRegister.appendChild(lblEmail);
 
 		divRegister.appendChild(document.createElement("br"));
@@ -260,6 +287,7 @@ function main() {
 		const inputEmail = document.createElement("input");
 		inputEmail.id = "inputEmail";
 		inputEmail.type = "email";
+		inputEmail.placeholder = "Email";
 		divRegister.appendChild(inputEmail);
 
 		divRegister.appendChild(document.createElement("br"));
@@ -275,6 +303,7 @@ function main() {
 		const inputPassword = document.createElement("input");
 		inputPassword.id = "inputPassword";
 		inputPassword.type = "password";
+		inputPassword.placeholder = "Password";
 		divRegister.appendChild(inputPassword);
 
 		divRegister.appendChild(document.createElement("br"));
@@ -282,7 +311,6 @@ function main() {
 
 		const btnRegister = document.createElement("button");
 		btnRegister.id = "btnRegister";
-		btnRegister.type = "submitv";
 		btnRegister.textContent = "Register";
 		btnRegister.addEventListener("click", () => {
 			const inputUsername = document.getElementById("inputUsername");
@@ -309,13 +337,13 @@ function main() {
 
 		divRegister.appendChild(document.createElement("br"));
 
-		const aLogin = document.createElement("a");
-		aLogin.href = "#";
-		aLogin.innerText = "I want to log in.";
-		aLogin.addEventListener("click", () => {
+		const spanLogin = document.createElement("span");
+		spanLogin.className = "link";
+		spanLogin.innerText = "I want to log in.";
+		spanLogin.addEventListener("click", () => {
 			showLoginLayout();
 		});
-		divRegister.appendChild(aLogin);
+		divRegister.appendChild(spanLogin);
 
 		document.body.appendChild(divRegister);
 	}
@@ -353,18 +381,17 @@ function main() {
 		btnJoinGame.textContent = "Join Game";
 		btnJoinGame.addEventListener("click", () => {
 			const inputJoinGame = document.getElementById("inputJoinGame");
-			if (!inputJoinGame.value)
-				return alert("Please type a room code into the text box.");
+
+			if (!inputJoinGame.value) return alert("Please type a room code into the text box.");
 
 			joinGame(inputJoinGame.value);
-			inputJoinGame.value = "";
 		});
 		divJoinGame.appendChild(btnJoinGame);
 		const inputJoinGame = document.createElement("input");
 		inputJoinGame.id = "inputJoinGame";
 		inputJoinGame.type = "text";
 		inputJoinGame.addEventListener("keydown", event => {
-			if (event.key === "Enter") btnJoinGame.click();
+			if (event.key === "Enter") document.getElementById("btnJoinGame").click();
 		});
 		divJoinGame.appendChild(inputJoinGame);
 		divMainMenu.appendChild(divJoinGame);
@@ -434,6 +461,7 @@ function main() {
 		inputTries.max = 5;
 		divCategorySelection.appendChild(inputTries);
 
+		divCategorySelection.appendChild(document.createElement("br"));
 		divCategorySelection.appendChild(document.createElement("br"));
 
 		const btnCreateGame = document.createElement("button");
@@ -532,17 +560,17 @@ function main() {
 		btnCreateCtegory.id = "btnCreateCtegory";
 		btnCreateCtegory.textContent = "Create Category";
 		btnCreateCtegory.addEventListener("click", () => {
-			const items = document.getElementsByClassName("item");
+			const items = document.getElementsByclassName("item");
 			const usedNames = [];
 			let itemsArray = "[";
 			let isValid = true;
 
-			for (let item of items) {
-				const names = item.getElementsByClassName("itemName");
-				const pictures = item.getElementsByClassName("itemPicture");
+			for (const item of items) {
+				const names = item.getElementsByclassName("itemName");
+				const pictures = item.getElementsByclassName("itemPicture");
 				const itemObject = {};
 
-				for (let name of names) {
+				for (const name of names) {
 					const value = name.value;
 
 					if (!value || usedNames.includes(value)) {
@@ -557,7 +585,7 @@ function main() {
 					usedNames.push(value);
 				}
 
-				for (let picture of pictures) {
+				for (const picture of pictures) {
 					if (!picture.value) {
 						picture.style.backgroundColor = "red";
 						isValid = false;
@@ -586,7 +614,156 @@ function main() {
 		});
 		divCategoryCreation.appendChild(btnCreateCtegory);
 
+		divCategoryCreation.appendChild(document.createElement("br"));
+
+		const btnBack = document.createElement("button");
+		btnBack.id = "btnBack";
+		btnBack.textContent = "Back";
+		btnBack.addEventListener("click", () => {
+			showMainMenuLayout();
+		});
+		divCategoryCreation.appendChild(btnBack);
+
 		document.body.appendChild(divCategoryCreation);
+	}
+
+	function showAccountRecoveryLayout() {
+		clearScreen();
+
+		const divAccountRecovery = document.createElement("div");
+		divAccountRecovery.id = "divAccountRecovery";
+
+		const lblEmail = document.createElement("label");
+		lblEmail.innerText = "Please insert your email below.";
+		lblEmail.htmlFor = "inputEmail";
+		divAccountRecovery.appendChild(lblEmail);
+
+		divAccountRecovery.appendChild(document.createElement("br"));
+		divAccountRecovery.appendChild(document.createElement("br"));
+
+		const inputEmail = document.createElement("input");
+		inputEmail.id = "inputEmail";
+		inputEmail.type = "email";
+		inputEmail.placeholder = "Email";
+		inputEmail.addEventListener("keydown", event => {
+			if (event.key === "Enter") document.getElementById("btnSend").click();
+		});
+		divAccountRecovery.appendChild(inputEmail);
+
+		divAccountRecovery.appendChild(document.createElement("br"));
+		divAccountRecovery.appendChild(document.createElement("br"));
+
+		const btnSend = document.createElement("button");
+		btnSend.id = "btnSend";
+		btnSend.textContent = "Send Recovery Request";
+		btnSend.addEventListener("click", () => {
+			if (inputEmail.value) {
+				const payload = {
+					"method": "recoverAccount",
+					"email": inputEmail.value
+				};
+
+				ws.send(JSON.stringify(payload));
+				alert("Request sent successfully. If the email is registered, an account recovery email will be sent.");
+				showLoginLayout();
+			}
+		});
+		divAccountRecovery.appendChild(btnSend);
+
+		divAccountRecovery.appendChild(document.createElement("br"));
+
+		const spanLogin = document.createElement("span");
+		spanLogin.className = "link";
+		spanLogin.innerText = "I want to log in.";
+		spanLogin.addEventListener("click", () => {
+			showLoginLayout();
+		});
+		divAccountRecovery.appendChild(spanLogin);
+
+		divAccountRecovery.appendChild(document.createElement("br"));
+
+		const spanRegister = document.createElement("span");
+		spanRegister.className = "link";
+		spanRegister.innerText = "I want to register.";
+		spanRegister.addEventListener("click", () => {
+			showRegisterLayout();
+		});
+		divAccountRecovery.appendChild(spanRegister);
+
+		document.body.appendChild(divAccountRecovery);
+	}
+
+	function showNewPasswordLayout(_recoveryCode) {
+		clearScreen();
+
+		const divChangePassword = document.createElement("div");
+		divChangePassword.id = "divChangePassword";
+
+		const lblNewPassword = document.createElement("label");
+		lblNewPassword.innerText = "New Password";
+		lblNewPassword.htmlFor = "inputNewPassword";
+		divChangePassword.appendChild(lblNewPassword);
+
+		divChangePassword.appendChild(document.createElement("br"));
+
+		const inputNewPassword = document.createElement("input");
+		inputNewPassword.id = "inputNewPassword";
+		inputNewPassword.type = "password";
+		inputNewPassword.placeholder = "New Password";
+		divChangePassword.appendChild(inputNewPassword);
+
+		divChangePassword.appendChild(document.createElement("br"));
+		divChangePassword.appendChild(document.createElement("br"));
+
+		const lblConfirmPassword = document.createElement("label");
+		lblConfirmPassword.innerText = "Confirm Password";
+		lblConfirmPassword.htmlFor = "inputConfirmPassword";
+		divChangePassword.appendChild(lblConfirmPassword);
+
+		divChangePassword.appendChild(document.createElement("br"));
+
+		const inputConfirmPassword = document.createElement("input");
+		inputConfirmPassword.id = "inputConfirmPassword";
+		inputConfirmPassword.type = "password";
+		inputConfirmPassword.placeholder = "Confirm Password";
+		divChangePassword.appendChild(inputConfirmPassword);
+
+		divChangePassword.appendChild(document.createElement("br"));
+		divChangePassword.appendChild(document.createElement("br"));
+
+		const btnChangePassword = document.createElement("button");
+		btnChangePassword.id = "btnChangePassword";
+		btnChangePassword.textContent = "Change Password";
+		btnChangePassword.addEventListener("click", () => {
+			const inputNewPassword = document.getElementById("inputNewPassword");
+			const inputConfirmPassword = document.getElementById("inputConfirmPassword");
+
+			if (!inputNewPassword.value) return inputNewPassword.style.backgroundColor = "red";
+			else inputNewPassword.style.backgroundColor = "white";
+			if (!inputConfirmPassword.value || inputConfirmPassword.value !== inputNewPassword.value) return inputConfirmPassword.style.backgroundColor = "red";
+			else inputConfirmPassword.style.backgroundColor = "white";
+
+			const payload = {
+				"method": "changePassword",
+				"recoveryCode": _recoveryCode,
+				"newPassword": inputNewPassword.value
+			};
+
+			ws.send(JSON.stringify(payload));
+		});
+		divChangePassword.appendChild(btnChangePassword);
+
+		divChangePassword.appendChild(document.createElement("br"));
+
+		const btnCancel = document.createElement("button");
+		btnCancel.id = "btnCancel";
+		btnCancel.textContent = "Cancel";
+		btnCancel.addEventListener("click", () => {
+			window.location.replace(domainURL);
+		});
+		divChangePassword.appendChild(btnCancel);
+
+		document.body.appendChild(divChangePassword);
 	}
 
 	function spawnItemsToEdit(_div, _number) {
@@ -747,7 +924,7 @@ function main() {
 				};
 
 				ws.send(JSON.stringify(payload));
-				document.getElementById("inputGuess").value = "";
+				inputGuess.value = "";
 			}
 		});
 
@@ -790,7 +967,7 @@ function main() {
 				};
 
 				ws.send(JSON.stringify(payload));
-				document.getElementById("inputMessage").value = "";
+				inputMessage.value = "";
 			}
 		});
 
@@ -802,7 +979,7 @@ function main() {
 		const message = document.createElement("div");
 
 		if (_type === "system") {
-			message.className = "message system";
+			message.className = "chat message system";
 			message.innerHTML = _message;
 			divChatHistory.appendChild(message);
 			divChatHistory.scrollTop = divChatHistory.scrollHeight;
@@ -810,7 +987,7 @@ function main() {
 		}
 
 		if (_type === "user") {
-			message.className = "message user";
+			message.className = "chat message user";
 			message.innerHTML = `<b>${_name === thisConnection.username ? "You" : _name}: </b>${_message}`;
 			divChatHistory.appendChild(message);
 			divChatHistory.scrollTop = divChatHistory.scrollHeight;
@@ -848,6 +1025,17 @@ function main() {
 		const title = document.createElement("h1");
 		title.innerHTML = "Who is it?™ Online";
 		document.body.appendChild(title);
+	}
+
+	function getURLParameter(sParam) {
+		let sPageURL = window.location.search.substring(1);
+		let sURLVariables = sPageURL.split("&");
+		for (let i = 0; i < sURLVariables.length; i++) {
+			let sParameterName = sURLVariables[i].split("=");
+			if (sParameterName[0] == sParam) {
+				return sParameterName[1];
+			}
+		}
 	}
 }
 
