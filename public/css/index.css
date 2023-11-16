@@ -36,7 +36,7 @@ table, td {
 	width: 254px;
 }
 
-.message {
+.chat.message {
 	white-space: pre-wrap;
 	white-space: -moz-pre-wrap;
 	white-space: -pre-wrap;
@@ -44,6 +44,15 @@ table, td {
 	word-wrap: break-word;
 }
 
-.message.system {
+.chat.message.system {
 	color: grey;
+}
+
+.link {
+	color: blue;
+}
+
+.link:hover {
+	text-decoration: underline;
+	cursor: pointer;
 }

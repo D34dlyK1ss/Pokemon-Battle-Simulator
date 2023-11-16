@@ -1,10 +1,12 @@
 import dotenv from "dotenv";
 import https from "https";
-import fs from "fs";
+import { readFileSync } from "fs";
 import express from "express";
 import { WebSocketServer } from "ws";
 import mysql from "mysql2";
+import nodemailer from "nodemailer";
 import badWords from "./badWords.js";
+import { JSDOM } from "jsdom";
 dotenv.config();
 
 const app = express();
@@ -13,8 +15,8 @@ app.use(express.static("public"));
 app.get("/", (req, res) => res.sendFile("index.html"));
 app.listen(clientPort);
 
-const key = fs.readFileSync("key.pem");
-const cert = fs.readFileSync("cert.pem");
+const key = readFileSync("key.pem");
+const cert = readFileSync("cert.pem");
 const options = { key: key, cert: cert };
 const server = https.createServer(options, app);
 server.on("error", (err) => console.error(err));
@@ -26,7 +28,18 @@ const db = mysql.createConnection({
 	user: "who_is_it_game",
 	database: "who_is_it"
 });
+
+const transporter = nodemailer.createTransport({
+	host: "smtp-mail.outlook.com",
+	port: 587,
+	auth: {
+		user: "whoisit.online@outlook.com",
+		pass: "Whoisit?Online"
+	}
+});
+
 const activeConnections = new Map();	// key: connection ID, value: ws
+const accountsToRecover = new Map();	// key: recovery code, value: email
 const usersInGame = new Map();			// key: user ID, value: game ID
 const lobbies = {};
 
@@ -73,6 +86,12 @@ wss.on("connection", ws => {
 		if (method === "logout") {
 			const username = result.username;
 
+			if (username) {
+				const gameId = usersInGame.get(username);
+
+				if (lobbies[gameId]) removePlayerFromGame(lobbies[gameId].id, username);
+			}
+
 			payload = {
 				"method": "loggedOut"
 			};
@@ -104,7 +123,7 @@ wss.on("connection", ws => {
 					}
 
 					db.query(
-						`INSERT INTO user (username, email, password) VALUES ('${username}', '${email}', SHA2('${password}', 256))`,
+						`INSERT INTO user (username, email, password) VALUES ('${username}', SHA2('${email}', 256), SHA2('${password}', 256))`,
 						(err) => {
 							if (err) return console.error(err);
 
@@ -114,6 +133,93 @@ wss.on("connection", ws => {
 					return;
 				}
 			);
+		}
+
+		if (method === "recoverAccount") {
+			const email = result.email;
+
+			db.query(
+				`SELECT username FROM user WHERE email=SHA2('${email}', 256)`,
+				(err, res) => {
+					if (err) return console.error(err);
+
+					if (res.length === 0) return;
+
+					const recoveryCode = newId(32);
+					const link = `https://localhost:8443?password_recovery=${recoveryCode}`;
+
+					transporter.sendMail({
+						from: "Support whoisit.online@outlook.com",
+						to: email,
+						subject: "Account recovery for Who is it?™ Online",
+						text: `Account recovery for Who is it?™ Online\nClick on the following link to reset your password (${res[0].username}): ${link}\nThe link will expire in 30 minutes.\nIf you did not request an account recovery, please ignore this email.`,
+						html: createEmailHTML(res[0].username, link)
+					});
+
+					let found = [...accountsToRecover.entries()].find(([, x]) => x === email);
+
+					do {
+						if (!found) break;
+						accountsToRecover.delete(found[0]);
+						found = [...accountsToRecover.entries()].find(([, x]) => x === email);
+					}
+					while (found);
+					
+					accountsToRecover.set(recoveryCode, email);
+					setTimeout(() => accountsToRecover.delete(recoveryCode), 1800000);
+				}
+			);
+		}
+
+		if (method === "checkRecoveryCode") {
+			const recoveryCode = result.recoveryCode;
+
+			if (!accountsToRecover.get(recoveryCode)) {
+				payload = {
+					"method": "error",
+					"type": "recoveringAccount",
+					"message": "The link has expired. Please request another account recovery."
+				};
+
+				ws.send(JSON.stringify(payload));
+				return;
+			}
+
+			payload = {
+				"method": "recoveringAccount",
+				"recoveryCode": recoveryCode
+			};
+
+			ws.send(JSON.stringify(payload));
+		}
+
+		if (method === "changePassword") {
+			const recoveryCode = result.recoveryCode;
+			const email = accountsToRecover.get(recoveryCode);
+
+			if (!email) {
+				payload = {
+					"method": "error",
+					"type": "changePassword",
+					"message": ""
+				};
+
+				ws.send(JSON.stringify(payload));
+			}
+
+			const newPassword = result.newPassword;
+
+			db.query(
+				`UPDATE user SET password=SHA2('${newPassword}', 256) WHERE email=SHA2('${email}', 256)`,
+				(err) => { if (err) console.error(err); }
+			);
+			accountsToRecover.delete(recoveryCode);
+
+			payload = {
+				"method": "accountRecovered"
+			};
+
+			ws.send(JSON.stringify(payload));
 		}
 
 		if (method === "getCategoryList") {
@@ -396,6 +502,18 @@ wss.on("connection", ws => {
 	});
 });
 
+function createEmailHTML(_username, _link) {
+	const baseHTML = readFileSync("app/html/recoveryEmail.html").toString();
+	const html = new JSDOM(baseHTML);
+	
+	html.window.document.getElementById("spanUsername").innerHTML = _username;
+	html.window.document.getElementById("spanRecovery").innerHTML = _link;
+	html.window.document.getElementById("aRecovery").href = _link;
+	html.window.document.getElementById("btnRecovery").href = _link;
+
+	return html.serialize();
+}
+
 function newId(_length) {
 	const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 	let result = "";
@@ -413,7 +531,7 @@ function loginQuery(_ws, _username, _password) {
 	let payload = {};
 
 	db.query(
-		`SELECT id, username, email FROM user WHERE (username = '${_username}' OR email = '${_username}') AND password = SHA2('${_password}', 256)`,
+		`SELECT id, username, email FROM user WHERE (username = '${_username}' OR email = SHA2('${_username}', 256)) AND password = SHA2('${_password}', 256)`,
 		(err, res) => {
 			if (err) return console.error(err);
 			if (res.length === 0) {
@@ -460,7 +578,7 @@ function removePlayerFromGame(_gameId, _leavingPlayer) {
 			lobbies[_gameId].status = "ended";
 			lobbies[_gameId].ended = Date.now();
 			lobbies[_gameId].winner = player;
-			
+
 			saveResultsToDatabase(lobbies[_gameId]);
 
 			const payload = {
