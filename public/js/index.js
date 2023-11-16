@@ -553,19 +553,19 @@ function main() {
 
 		const selSize = document.createElement("select");
 		selSize.id = "selSize";
-		const option20 = document.createElement("option");
-		option20.value = 20;
-		option20.innerHTML = 20;
-		selSize.appendChild(option20);
+		const option18 = document.createElement("option");
+		option18.value = 18;
+		option18.innerHTML = 18;
+		selSize.appendChild(option18);
 		const option24 = document.createElement("option");
 		option24.selected = true;
 		option24.value = 24;
 		option24.innerHTML = 24;
 		selSize.appendChild(option24);
-		const option28 = document.createElement("option");
-		option28.value = 28;
-		option28.innerHTML = 28;
-		selSize.appendChild(option28);
+		const option30 = document.createElement("option");
+		option30.value = 30;
+		option30.innerHTML = 30;
+		selSize.appendChild(option30);
 
 		const divItems = document.createElement("divItems");
 		divItems.id = "divItems";
