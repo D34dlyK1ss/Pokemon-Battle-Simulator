@@ -29,17 +29,21 @@ const db = mysql.createConnection({
 	database: "who_is_it"
 });
 
+const gameEmail = process.env.EMAIL;
+const gamePassword = process.env.PASSWORD;
 const transporter = nodemailer.createTransport({
 	host: "smtp-mail.outlook.com",
 	port: 587,
 	auth: {
-		user: "whoisit.online@outlook.com",
-		pass: "Whoisit?Online"
+		user: gameEmail,
+		pass: gamePassword
 	}
 });
 
+const domainURL = "https://localhost:8443";
 const activeConnections = new Map();	// key: connection ID, value: ws
 const accountsToRecover = new Map();	// key: recovery code, value: email
+const accountsToVerify = new Map();		// key: verification code, value: email
 const usersInGame = new Map();			// key: user ID, value: game ID
 const lobbies = {};
 
@@ -106,31 +110,52 @@ wss.on("connection", ws => {
 		if (method === "register") {
 			const username = result.username;
 			const email = result.email;
-			const password = result.password;
 
 			db.query(
-				`SELECT id FROM user WHERE (username = '${username}' OR email = '${email}')`,
+				`SELECT id FROM user WHERE (username = '${username}' OR email = SHA2('${email}', 256))`,
 				(err, res) => {
 					if (err) return console.error(err);
 					if (res.length > 0) {
 						payload = {
-							"method": "error",
-							"type": "register",
+							"method": "alert",
+							"error": true,
+							"action": "register",
 							"message": "Failed to register. Username or email are already in use."
 						};
 
-						return ws.send(JSON.stringify(payload));
+						ws.send(JSON.stringify(payload));
+						return;
 					}
 
-					db.query(
-						`INSERT INTO user (username, email, password) VALUES ('${username}', SHA2('${email}', 256), SHA2('${password}', 256))`,
-						(err) => {
-							if (err) return console.error(err);
+					const email = result.email;
+					const username = result.username;
+					const verificationCode = newId(32);
+					const link = `${domainURL}?email_verification=${verificationCode}`;
 
-							loginQuery(ws, username, password);
-						}
-					);
-					return;
+					transporter.sendMail({
+						from: `Who is it? Online ${gameEmail}`,
+						to: email,
+						subject: "[Who is it? Online] Email Verification",
+						text: `Email Verification\nClick on the following link to finish registering your new account (${username}): ${link}\nThe link will expire in 30 minutes.\nIf you did not request an account registration, please ignore this email.`,
+						html: createEmailHTML("verificationEmail.html", username, link)
+					});
+
+					let found = [...accountsToVerify.entries()].find(([, x]) => x === email);
+
+					do {
+						if (!found) break;
+						accountsToVerify.delete(found[0]);
+						found = [...accountsToVerify.entries()].find(([, x]) => x === email);
+					}
+					while (found);
+
+					accountsToVerify.set(verificationCode, { "username": username, "email": email, "password": result.password });
+					setTimeout(() => accountsToVerify.delete(verificationCode), 1800000);
+
+					payload = {
+						"method": "verificationSent"
+					};
+					ws.send(JSON.stringify(payload));
 				}
 			);
 		}
@@ -146,14 +171,14 @@ wss.on("connection", ws => {
 					if (res.length === 0) return;
 
 					const recoveryCode = newId(32);
-					const link = `https://localhost:8443?password_recovery=${recoveryCode}`;
+					const link = `${domainURL}?password_recovery=${recoveryCode}`;
 
 					transporter.sendMail({
-						from: "Support whoisit.online@outlook.com",
+						from: `Who is it? Online ${gameEmail}`,
 						to: email,
-						subject: "Account recovery for Who is it?™ Online",
-						text: `Account recovery for Who is it?™ Online\nClick on the following link to reset your password (${res[0].username}): ${link}\nThe link will expire in 30 minutes.\nIf you did not request an account recovery, please ignore this email.`,
-						html: createEmailHTML(res[0].username, link)
+						subject: "[Who is it? Online] Account Recovery",
+						text: `Account Recovery\nClick on the following link to reset your password (${res[0].username}): ${link}\nThe link will expire in 30 minutes.\nIf you did not request an account recovery, please ignore this email.`,
+						html: createEmailHTML("recoveryEmail.html", res[0].username, link)
 					});
 
 					let found = [...accountsToRecover.entries()].find(([, x]) => x === email);
@@ -164,11 +189,48 @@ wss.on("connection", ws => {
 						found = [...accountsToRecover.entries()].find(([, x]) => x === email);
 					}
 					while (found);
-					
+
 					accountsToRecover.set(recoveryCode, email);
 					setTimeout(() => accountsToRecover.delete(recoveryCode), 1800000);
 				}
 			);
+		}
+
+		if (method === "checkVerificationCode") {
+			const verificationCode = result.verificationCode;
+			const accountToRegister = accountsToVerify.get(verificationCode);
+
+			if (!accountToRegister) {
+				payload = {
+					"method": "alert",
+					"error": true,
+					"action": "verifyingEmail",
+					"message": "The link has expired. Please register again."
+				};
+
+				ws.send(JSON.stringify(payload));
+				return;
+			}
+
+			const username = accountToRegister.username;
+			const email = accountToRegister.email;
+			const password = accountToRegister.password;
+
+			db.query(
+				`INSERT INTO user (username, email, password) VALUES ('${username}', SHA2('${email}', 256), SHA2('${password}', 256))`,
+				(err) => {
+					if (err) return console.error(err);
+
+					loginQuery(ws, username, password);
+				}
+			);
+
+			payload = {
+				"method": "emailVerified"
+			};
+
+			ws.send(JSON.stringify(payload));
+			accountsToVerify.delete(result.verificationCode);
 		}
 
 		if (method === "checkRecoveryCode") {
@@ -176,8 +238,9 @@ wss.on("connection", ws => {
 
 			if (!accountsToRecover.get(recoveryCode)) {
 				payload = {
-					"method": "error",
-					"type": "recoveringAccount",
+					"method": "alert",
+					"error": true,
+					"action": "recoveringAccount",
 					"message": "The link has expired. Please request another account recovery."
 				};
 
@@ -199,8 +262,9 @@ wss.on("connection", ws => {
 
 			if (!email) {
 				payload = {
-					"method": "error",
-					"type": "changePassword",
+					"method": "alert",
+					"error": true,
+					"action": "changePassword",
 					"message": ""
 				};
 
@@ -258,8 +322,9 @@ wss.on("connection", ws => {
 		if (method === "newGame") {
 			if (usersInGame.has(result.username)) {
 				payload = {
-					"method": "error",
-					"type": "joinGame",
+					"method": "alert",
+					"error": true,
+					"action": "joinGame",
 					"message": "Failed to create a new game. You're already playing a game."
 				};
 
@@ -298,8 +363,9 @@ wss.on("connection", ws => {
 
 			if (usersInGame.has(result.username)) {
 				payload = {
-					"method": "error",
-					"type": "joinGame",
+					"method": "alert",
+					"error": true,
+					"action": "joinGame",
 					"message": "Failed to join a game. You're already playing a game."
 				};
 
@@ -309,8 +375,9 @@ wss.on("connection", ws => {
 
 			if (!lobbies[gameId]) {
 				payload = {
-					"method": "error",
-					"type": "joinGame",
+					"method": "alert",
+					"error": true,
+					"action": "joinGame",
 					"message": "Failed to join a game. The game doesn't exist."
 				};
 
@@ -320,8 +387,9 @@ wss.on("connection", ws => {
 
 			if (lobbies[gameId].players.length >= 2) {
 				payload = {
-					"method": "error",
-					"type": "joinGame",
+					"method": "alert",
+					"error": true,
+					"action": "joinGame",
 					"message": "Failed to join game. The game reached max players."
 				};
 
@@ -502,10 +570,10 @@ wss.on("connection", ws => {
 	});
 });
 
-function createEmailHTML(_username, _link) {
-	const baseHTML = readFileSync("app/html/recoveryEmail.html").toString();
+function createEmailHTML(_fileName, _username, _link) {
+	const baseHTML = readFileSync(`app/html/${_fileName}`).toString();
 	const html = new JSDOM(baseHTML);
-	
+
 	html.window.document.getElementById("spanUsername").innerHTML = _username;
 	html.window.document.getElementById("spanRecovery").innerHTML = _link;
 	html.window.document.getElementById("aRecovery").href = _link;
@@ -536,8 +604,9 @@ function loginQuery(_ws, _username, _password) {
 			if (err) return console.error(err);
 			if (res.length === 0) {
 				payload = {
-					"method": "error",
-					"type": "login",
+					"method": "alert",
+					"error": true,
+					"action": "login",
 					"message": "Failed to log in. Username/email or password incorrect."
 				};
 

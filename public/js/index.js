@@ -9,10 +9,12 @@ function main() {
 		const response = JSON.parse(message.data);
 		const method = response.method;
 
-		if (method === "error") {
+		if (method === "alert") {
 			alert(response.message);
 
-			if (response.type === "recoveringAccount") window.location.replace(domainURL);
+			if (response.error) {
+				if (response.action === "recoveringAccount") window.location.replace(domainURL);
+			}
 
 			return;
 		}
@@ -20,9 +22,20 @@ function main() {
 		// Connection was made
 		if (method === "connect") {
 			const recoveryCode = getURLParameter("password_recovery");
+			const verificationCode = getURLParameter("email_verification");
 
 			thisConnection = response.connectionData;
 			spawnTitle();
+
+			if (verificationCode) {
+				const payload = {
+					"method": "checkVerificationCode",
+					"verificationCode": verificationCode
+				};
+				
+				ws.send(JSON.stringify(payload));
+				return;
+			}
 
 			if (recoveryCode) {
 				const payload = {
@@ -53,6 +66,12 @@ function main() {
 			return;
 		}
 
+		if (method === "verificationSent") {
+			alert("Registration validated. A verification email was sent.");
+			showLoginLayout();
+			return;
+		}
+
 		if (method === "recoveringAccount") {
 			showNewPasswordLayout(response.recoveryCode);
 			return;
@@ -60,6 +79,12 @@ function main() {
 
 		if (method === "accountRecovered") {
 			alert("Account password changed successfully!");
+			window.location.replace(domainURL);
+			return;
+		}
+
+		if (method === "emailVerified") {
+			alert("Email verified successfully!");
 			window.location.replace(domainURL);
 			return;
 		}
@@ -162,7 +187,7 @@ function main() {
 
 	function spawnTitle() {
 		const title = document.createElement("h1");
-		title.innerHTML = "Who is it?™ Online";
+		title.innerHTML = "Who is it? Online";
 		document.body.appendChild(title);
 	}
 
@@ -1023,7 +1048,7 @@ function main() {
 		document.body.innerHTML = "";
 
 		const title = document.createElement("h1");
-		title.innerHTML = "Who is it?™ Online";
+		title.innerHTML = "Who is it? Online";
 		document.body.appendChild(title);
 	}
 
