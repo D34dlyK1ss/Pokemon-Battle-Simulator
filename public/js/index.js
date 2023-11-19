@@ -946,8 +946,14 @@ function main() {
 				btnCell.style.color = "limegreen";
 				btnCell.textContent = item.name;
 				btnCell.addEventListener("click", () => {
-					if (btnCell.style.color === "limegreen") btnCell.style.color = "red";
-					else btnCell.style.color = "limegreen";
+					if (btnCell.style.color === "limegreen") {
+						btnCell.style.color = "red";
+						imgCell.style.filter = "grayscale()";
+					}
+					else {
+						btnCell.style.color = "limegreen";
+						imgCell.style.filter = null;
+					}
 				});
 				td.appendChild(btnCell);
 				tr.appendChild(td);

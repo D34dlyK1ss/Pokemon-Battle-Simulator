@@ -696,7 +696,7 @@ function saveResultsToDatabase(_game) {
 	const playerUsername2 = player2.username;
 	const playerTries1 = 2 - _game.triesLeft[playerUsername1];
 	const playerTries2 = 2 - _game.triesLeft[playerUsername2];
-	const duration = Math.round(_game.ended - _game.started / 1000);
+	const duration = Math.round((_game.ended - _game.started) / 1000);
 	const winner = _game.winner;
 
 	db.query(
