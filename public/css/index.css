@@ -36,6 +36,15 @@ table, td {
 	width: 254px;
 }
 
+#divItems{
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+}
+
+#divItems .item{
+	padding: 5px;
+}
+
 .chat.message {
 	white-space: pre-wrap;
 	white-space: -moz-pre-wrap;
@@ -55,4 +64,10 @@ table, td {
 .link:hover {
 	text-decoration: underline;
 	cursor: pointer;
+}
+
+.picture {
+	width: 64px;
+	height: 64px;
+	object-fit: cover;
 }

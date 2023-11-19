@@ -32,7 +32,7 @@ function main() {
 					"method": "checkVerificationCode",
 					"verificationCode": verificationCode
 				};
-				
+
 				ws.send(JSON.stringify(payload));
 				return;
 			}
@@ -42,7 +42,7 @@ function main() {
 					"method": "checkRecoveryCode",
 					"recoveryCode": recoveryCode
 				};
-				
+
 				ws.send(JSON.stringify(payload));
 				return;
 			}
@@ -545,84 +545,111 @@ function main() {
 		divCategoryCreation.appendChild(document.createElement("br"));
 		divCategoryCreation.appendChild(document.createElement("br"));
 
-		const lblSize = document.createElement("label");
-		lblSize.id = "lblSize";
-		lblSize.htmlFor = "selSize";
-		lblSize.innerText = "Size: ";
-		divCategoryCreation.appendChild(lblSize);
+		const lblPrivate = document.createElement("label");
+		lblPrivate.id = "lblPrivate";
+		lblPrivate.htmlFor = "cbPublic";
+		lblPrivate.innerText = "Public:";
+		divCategoryCreation.appendChild(lblPrivate);
 
-		const selSize = document.createElement("select");
-		selSize.id = "selSize";
-		const option18 = document.createElement("option");
-		option18.value = 18;
-		option18.innerHTML = 18;
-		selSize.appendChild(option18);
-		const option24 = document.createElement("option");
-		option24.selected = true;
-		option24.value = 24;
-		option24.innerHTML = 24;
-		selSize.appendChild(option24);
-		const option30 = document.createElement("option");
-		option30.value = 30;
-		option30.innerHTML = 30;
-		selSize.appendChild(option30);
+		const cbPublic = document.createElement("input");
+		cbPublic.id = "cbPublic";
+		cbPublic.type = "checkbox";
+		divCategoryCreation.appendChild(cbPublic);
 
-		const divItems = document.createElement("divItems");
+		divCategoryCreation.appendChild(document.createElement("br"));
+		divCategoryCreation.appendChild(document.createElement("br"));
+
+		const divItems = document.createElement("div");
 		divItems.id = "divItems";
-		selSize.addEventListener("change", () => {
-			divItems.innerHTML = "";
-			spawnItemsToEdit(divItems, parseInt(selSize.value));
-		});
-		divCategoryCreation.appendChild(selSize);
 
-		divCategoryCreation.appendChild(document.createElement("br"));
-		divCategoryCreation.appendChild(document.createElement("br"));
+		for (let i = 0; i < 24; i++) {
+			const divItem = document.createElement("div");
+			divItem.id = `divItem${i}`;
+			divItem.className = "item";
+			const lblName = document.createElement("label");
+			lblName.id = `lblName${i}`;
+			lblName.htmlFor = `inputName${i}`;
+			lblName.innerText = "Name: ";
+			divItem.appendChild(lblName);
 
-		spawnItemsToEdit(divItems, parseInt(selSize.value));
+			const inputName = document.createElement("input");
+			inputName.id = `inputName${i}`;
+			inputName.className = "itemName";
+			inputName.placeholder = "Name";
+			divItem.appendChild(inputName);
+
+			divItem.appendChild(document.createElement("br"));
+
+			const lblPicture = document.createElement("label");
+			lblPicture.id = `lblPicture${i}`;
+			lblPicture.htmlFor = `inputPicture${i}`;
+			lblPicture.innerText = "Picture: ";
+			divItem.appendChild(lblPicture);
+
+			const inputPicture = document.createElement("input");
+			inputPicture.id = `inputPicture${i}`;
+			inputPicture.className = "itemPicture";
+			inputPicture.placeholder = "URL";
+			divItem.appendChild(inputPicture);
+
+			divItem.appendChild(document.createElement("br"));
+
+			const spanError = document.createElement("span");
+			spanError.id = `spanError${i}`;
+			spanError.className = "spanError";
+			spanError.style.color = "red";
+			divItem.appendChild(spanError);
+
+			divItem.appendChild(document.createElement("br"));
+
+			divItems.appendChild(divItem);
+		}
+
 		divCategoryCreation.appendChild(divItems);
 
 		const btnCreateCtegory = document.createElement("button");
 		btnCreateCtegory.id = "btnCreateCtegory";
 		btnCreateCtegory.textContent = "Create Category";
 		btnCreateCtegory.addEventListener("click", () => {
-			const items = document.getElementsByclassName("item");
+			const errors = document.getElementsByClassName("spanError");
+			const items = document.getElementsByClassName("item");
 			const usedNames = [];
+			const usedPictures = [];
 			let itemsArray = "[";
 			let isValid = true;
+			let i = 0;
+
+			for (const error of errors) {
+				error.innerHTML = "";
+			}
 
 			for (const item of items) {
-				const names = item.getElementsByclassName("itemName");
-				const pictures = item.getElementsByclassName("itemPicture");
+				const names = item.getElementsByClassName("itemName");
+				const pictures = item.getElementsByClassName("itemPicture");
 				const itemObject = {};
+
+				for (const picture of pictures) {
+					const value = picture.value;
+
+					if (!pictureValidation(value, i, usedPictures)) isValid = false;
+					else itemObject.picture = picture.value;
+
+					usedPictures.push(value);
+				}
 
 				for (const name of names) {
 					const value = name.value;
 
-					if (!value || usedNames.includes(value)) {
-						name.style.backgroundColor = "red";
-						isValid = false;
-					}
-					else {
-						name.style.backgroundColor = "white";
-						itemObject.name = value;
-					}
+					if (!nameValidation(value, i, usedNames)) isValid = false;
+					else itemObject.name = name.value;
 
 					usedNames.push(value);
 				}
 
-				for (const picture of pictures) {
-					if (!picture.value) {
-						picture.style.backgroundColor = "red";
-						isValid = false;
-					}
-					else {
-						picture.style.backgroundColor = "white";
-						itemObject.picture = picture.value;
-					}
-				}
-
 				if (isValid) itemsArray += JSON.stringify(itemObject) + ", ";
+				i++;
 			}
+			
 			itemsArray = itemsArray.substring(0, itemsArray.length - 2);
 			itemsArray += "]";
 
@@ -632,7 +659,8 @@ function main() {
 				"method": "createCategory",
 				"userId": thisConnection.userId,
 				"name": inputName.value,
-				"items": itemsArray
+				"items": itemsArray,
+				"isPublic": cbPublic.checked
 			};
 
 			ws.send(JSON.stringify(payload));
@@ -650,6 +678,38 @@ function main() {
 		divCategoryCreation.appendChild(btnBack);
 
 		document.body.appendChild(divCategoryCreation);
+	}
+
+	function nameValidation(_name, _i, _usedNames) {
+		const spanError = document.getElementById(`spanError${_i}`);
+
+		if (!_name) {
+			spanError.textContent = "Name missing";
+			return false;
+		}
+
+		if (_usedNames.includes(_name)) {
+			spanError.textContent = "Name already in use";
+			return false;
+		}
+
+		return true;
+	}
+
+	function pictureValidation(_picture, _i, _usedPictures) {
+		const spanError = document.getElementById(`spanError${_i}`);
+
+		if (!_picture) {
+			spanError.textContent = "Picture missing";
+			return false;
+		}
+
+		if (_usedPictures.includes(_picture)) {
+			spanError.textContent = "Picture link already in use";
+			return false;
+		}
+		
+		return true;
 	}
 
 	function showAccountRecoveryLayout() {
@@ -791,40 +851,6 @@ function main() {
 		document.body.appendChild(divChangePassword);
 	}
 
-	function spawnItemsToEdit(_div, _number) {
-		for (let i = 0; i < _number; i++) {
-			const divItem = document.createElement("div");
-			divItem.id = `divItem${i}`;
-			divItem.className = "item";
-			const lblName = document.createElement("label");
-			lblName.id = `lblName${i}`;
-			lblName.htmlFor = `inputName${i}`;
-			lblName.innerText = "Name: ";
-			divItem.appendChild(lblName);
-
-			const inputName = document.createElement("input");
-			inputName.id = `inputName${i}`;
-			inputName.className = "itemName";
-			divItem.appendChild(inputName);
-
-			divItem.appendChild(document.createElement("br"));
-
-			const lblPicture = document.createElement("label");
-			lblPicture.id = `lblPicture${i}`;
-			lblPicture.htmlFor = `inputPicture${i}`;
-			lblPicture.innerText = "Picture: ";
-			divItem.appendChild(lblPicture);
-
-			const inputPicture = document.createElement("input");
-			inputPicture.id = `inputPicture${i}`;
-			inputPicture.className = "itemPicture";
-			divItem.appendChild(inputPicture);
-			_div.appendChild(divItem);
-			_div.appendChild(document.createElement("br"));
-			_div.appendChild(document.createElement("br"));
-		}
-	}
-
 	function showLobbyLayout(_gameId, _owner, _playersArray) {
 		clearScreen();
 		spawnRoomCode(_gameId);
@@ -871,8 +897,8 @@ function main() {
 			"gameId": gameId
 		};
 
-		gameId = null;
 		ws.send(JSON.stringify(payload));
+		gameId = null;
 		clearScreen();
 		showMainMenuLayout();
 	}
@@ -909,16 +935,20 @@ function main() {
 			let itemsInRow = _items.splice(0, 6);
 			for (const item of itemsInRow) {
 				const td = document.createElement("td");
-				const btnCell = document.createElement("button");
+				const imgCell = document.createElement("img");
+				imgCell.className = "picture";
+				imgCell.src = item.picture;
+				td.appendChild(imgCell);
 
+				td.appendChild(document.createElement("br"));
+
+				const btnCell = document.createElement("button");
 				btnCell.style.color = "limegreen";
 				btnCell.textContent = item.name;
-
 				btnCell.addEventListener("click", () => {
 					if (btnCell.style.color === "limegreen") btnCell.style.color = "red";
 					else btnCell.style.color = "limegreen";
 				});
-
 				td.appendChild(btnCell);
 				tr.appendChild(td);
 			}

@@ -311,7 +311,7 @@ wss.on("connection", ws => {
 
 		if (method === "createCategory") {
 			db.query(
-				`INSERT INTO category(user_id, name, items, type) VALUES (${parseInt(result.userId)}, '${result.name}', '${result.items}', 'Custom')`,
+				`INSERT INTO category(user_id, name, type, isPublic, items) VALUES (${parseInt(result.userId)}, '${result.name}', 'Custom', ${result.isPublic}, '${result.items}')`,
 				(err) => {
 					if (err) console.error(err);
 				}
@@ -635,11 +635,11 @@ function doLogin(_ws, _username, _id) {
 }
 
 function removePlayerFromGame(_gameId, _leavingPlayer) {
+	usersInGame.delete(_leavingPlayer);
+
 	if (!lobbies[_gameId]) return;
 
 	for (const player of lobbies[_gameId].players) {
-		usersInGame.delete(_leavingPlayer);
-
 		if (lobbies[_gameId].status === "waiting" && player.username === _leavingPlayer) {
 			lobbies[_gameId].players.splice(lobbies[_gameId].players.indexOf(player), 1);
 		}
@@ -696,7 +696,7 @@ function saveResultsToDatabase(_game) {
 	const playerUsername2 = player2.username;
 	const playerTries1 = 2 - _game.triesLeft[playerUsername1];
 	const playerTries2 = 2 - _game.triesLeft[playerUsername2];
-	const duration = (_game.ended - _game.started) / 1000;
+	const duration = Math.round(_game.ended - _game.started / 1000);
 	const winner = _game.winner;
 
 	db.query(
