@@ -45,6 +45,12 @@ table, td {
 	padding: 5px;
 }
 
+.divLeaderboardUser {
+	border: 1px solid black;
+	height: 50px;
+	width: 500px;
+}
+
 .chat.message {
 	white-space: pre-wrap;
 	white-space: -moz-pre-wrap;
@@ -70,5 +76,4 @@ table, td {
 	width: 64px;
 	height: 64px;
 	object-fit: cover;
-	
 }

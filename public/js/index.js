@@ -172,6 +172,12 @@ function main() {
 			leaveGame();
 			return;
 		}
+		
+		// Leaderboard
+		if (method === "getLeaderboard") {
+			showLeaderboardLayout(response.data);
+			return;
+		}
 	};
 
 	function joinGame(_gameId) {
@@ -424,11 +430,24 @@ function main() {
 		const btnCategoryEditor = document.createElement("button");
 		btnCategoryEditor.id = "btnCategoryEditor";
 		btnCategoryEditor.textContent = "Category Editor";
-
 		btnCategoryEditor.addEventListener("click", () => {
 			showCategoryCreationLayout();
 		});
 		divMainMenu.appendChild(btnCategoryEditor);
+
+		divMainMenu.appendChild(document.createElement("br"));
+
+		const btnLeaderboard = document.createElement("button");
+		btnLeaderboard.id = "btnLeaderboard";
+		btnLeaderboard.textContent = "Leaderboard";
+		btnLeaderboard.addEventListener("click", () => {
+			const payload = {
+				"method": "getLeaderboard"
+			};
+
+			ws.send(JSON.stringify(payload));
+		});
+		divMainMenu.appendChild(btnLeaderboard);
 
 		divMainMenu.appendChild(document.createElement("br"));
 
@@ -998,6 +1017,65 @@ function main() {
 		divGame.appendChild(pTries);
 
 		document.body.appendChild(divGame);
+	}
+
+	function showLeaderboardLayout(_data) {
+		clearScreen();
+
+		const divLeaderboard = document.createElement("div");
+		divLeaderboard.id = "divLeaderboard";
+
+		const btnBack = document.createElement("button");
+		btnBack.id = "btnBack";
+		btnBack.textContent = "Back";
+		btnBack.addEventListener("click", () => {
+			showMainMenuLayout();
+		});
+		divLeaderboard.appendChild(btnBack);
+
+		divLeaderboard.appendChild(document.createElement("br"));
+		divLeaderboard.appendChild(document.createElement("br"));
+
+		for (let user of _data) {
+			const divUser = document.createElement("div");
+			divUser.className = "divLeaderboardUser";
+			
+			const spanUsername = document.createElement("span");
+			spanUsername.id = "spanUsername";
+			spanUsername.innerHTML = `<b>${user.username}</b>`;
+			divUser.appendChild(spanUsername);
+			
+			const spanWins = document.createElement("span");
+			spanWins.id = "spanWins";
+			spanWins.textContent = `Wins: ${user.wins}`;
+			divUser.appendChild(spanWins);
+			
+			const spanLosses = document.createElement("span");
+			spanLosses.id = "spanLosses";
+			spanLosses.textContent = `Losses: ${user.losses}`;
+			divUser.appendChild(spanLosses);
+			
+			const spanNMatches = document.createElement("span");
+			spanNMatches.id = "spanNMatches";
+			spanNMatches.textContent = `Total: ${user.total}`;
+			divUser.appendChild(spanNMatches);
+			
+			const spanWinRate = document.createElement("span");
+			spanWinRate.id = "spanWinRate";
+			spanWinRate.textContent = `Win Rate: ${user.win_rate}%`;
+			divUser.appendChild(spanWinRate);
+			
+			const spanPoints = document.createElement("span");
+			spanPoints.id = "spanPoints";
+			spanPoints.textContent = `Points: ${user.points}`;
+			divUser.appendChild(spanPoints);
+
+			divLeaderboard.appendChild(divUser);
+
+			divLeaderboard.appendChild(document.createElement("br"));
+		}
+
+		document.body.appendChild(divLeaderboard);
 	}
 
 	function spawnChat() {

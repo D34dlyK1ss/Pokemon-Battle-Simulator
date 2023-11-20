@@ -567,6 +567,22 @@ wss.on("connection", ws => {
 
 			return ws.send(JSON.stringify(payload));
 		}
+
+		if (method === "getLeaderboard") {
+			db.query(
+				"SELECT id, username, wins, losses, (SUM(wins) + SUM(losses)) as total, ROUND((SUM(wins) * 100 / (SUM(wins) + SUM(losses))), 2) as win_rate, (CASE WHEN (SUM(wins) * 20 - SUM(losses) * 15) < 0 THEN 0 ELSE (SUM(wins) * 20 - SUM(losses) * 15) END) AS points FROM user GROUP BY id ORDER BY points DESC",
+				(err, res) => {
+					if (err) console.error(err);
+
+					payload = {
+						"method": "getLeaderboard",
+						"data": res
+					};
+
+					ws.send(JSON.stringify(payload));
+				}
+			);
+		}
 	});
 });
 
