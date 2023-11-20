@@ -1,26 +1,69 @@
 * {
-	-webkit-user-select: none;
-	-ms-user-select: none;
-	user-select: none;
+    text-decoration: none;
+    margin: 0;
+    outline: none;
+    padding: 0;
+    line-height: 1;
+    text-size-adjust: none;
+    user-select: none;
 }
 
-table, td {
-	padding: 20px;
+body, html {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+body {
+	display: flex;
+	flex-direction: row;
+	background-color: cornflowerblue;
+}
+
+button {
+	margin: 2px;
+}
+
+table,
+td {
+	padding: 5px;
 	text-align: center;
 	border: 1px solid black;
 	border-collapse: collapse;
 }
 
+#container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+	flex: 1 0 auto;
+}
+
+#title {
+    align-items: flex-end;
+	color: white;
+}
+
+#screen {
+	width: 70%;
+	height: 80%;
+	padding: 1%;
+	background-color: white;
+	box-shadow: -2px 2px 4px 0 rgba(0, 0, 0, 0.3);
+	border-radius: 10px;
+}
+
 #pRoomCode {
-	-webkit-user-select: text;
-	-ms-user-select: text;
 	user-select: text;
 	font-size: x-large;
 }
 
 #divPlayers {
 	font-size: large;
-	height: 41px;
+	height: 50px;
 	width: 260px;
 	border: 1px solid black;
 }
@@ -36,12 +79,12 @@ table, td {
 	width: 254px;
 }
 
-#divItems{
+#divItems {
 	display: grid;
 	grid-template-columns: repeat(6, 1fr);
 }
 
-#divItems .item{
+#divItems .item {
 	padding: 5px;
 }
 

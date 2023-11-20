@@ -194,7 +194,7 @@ function main() {
 	function spawnTitle() {
 		const title = document.createElement("h1");
 		title.innerHTML = "Who is it? Online";
-		document.body.appendChild(title);
+		document.getElementById("screen").appendChild(title);
 	}
 
 	function showLoginLayout() {
@@ -243,6 +243,7 @@ function main() {
 
 		const btnLogin = document.createElement("button");
 		btnLogin.id = "btnLogin";
+		btnLogin.className = "btn btn-primary";
 		btnLogin.textContent = "Login";
 		btnLogin.addEventListener("click", () => {
 			const inputUsername = document.getElementById("inputUsername");
@@ -283,7 +284,7 @@ function main() {
 		});
 		divLogin.appendChild(spanRegister);
 
-		document.body.appendChild(divLogin);
+		document.getElementById("screen").appendChild(divLogin);
 	}
 
 	function showRegisterLayout() {
@@ -342,6 +343,7 @@ function main() {
 
 		const btnRegister = document.createElement("button");
 		btnRegister.id = "btnRegister";
+		btnRegister.className = "btn btn-primary";
 		btnRegister.textContent = "Register";
 		btnRegister.addEventListener("click", () => {
 			const inputUsername = document.getElementById("inputUsername");
@@ -376,7 +378,7 @@ function main() {
 		});
 		divRegister.appendChild(spanLogin);
 
-		document.body.appendChild(divRegister);
+		document.getElementById("screen").appendChild(divRegister);
 	}
 
 	function showMainMenuLayout() {
@@ -395,6 +397,7 @@ function main() {
 
 		const btnNewGame = document.createElement("button");
 		btnNewGame.id = "btnNewGame";
+		btnNewGame.className = "btn btn-primary";
 		btnNewGame.textContent = "New Game";
 		btnNewGame.addEventListener("click", () => {
 			const payload = {
@@ -409,6 +412,7 @@ function main() {
 		divJoinGame.id = "divJoinGame";
 		const btnJoinGame = document.createElement("button");
 		btnJoinGame.id = "btnJoinGame";
+		btnJoinGame.className = "btn btn-primary";
 		btnJoinGame.textContent = "Join Game";
 		btnJoinGame.addEventListener("click", () => {
 			const inputJoinGame = document.getElementById("inputJoinGame");
@@ -429,6 +433,7 @@ function main() {
 
 		const btnCategoryEditor = document.createElement("button");
 		btnCategoryEditor.id = "btnCategoryEditor";
+		btnCategoryEditor.className = "btn btn-primary";
 		btnCategoryEditor.textContent = "Category Editor";
 		btnCategoryEditor.addEventListener("click", () => {
 			showCategoryCreationLayout();
@@ -439,6 +444,7 @@ function main() {
 
 		const btnLeaderboard = document.createElement("button");
 		btnLeaderboard.id = "btnLeaderboard";
+		btnLeaderboard.className = "btn btn-primary";
 		btnLeaderboard.textContent = "Leaderboard";
 		btnLeaderboard.addEventListener("click", () => {
 			const payload = {
@@ -453,6 +459,7 @@ function main() {
 
 		const btnLogout = document.createElement("button");
 		btnLogout.id = "btnLogout";
+		btnLogout.className = "btn btn-danger";
 		btnLogout.textContent = "Logout";
 
 		btnLogout.addEventListener("click", () => {
@@ -465,7 +472,7 @@ function main() {
 		});
 		divMainMenu.appendChild(btnLogout);
 
-		document.body.appendChild(divMainMenu);
+		document.getElementById("screen").appendChild(divMainMenu);
 	}
 
 	function showCategorySelectionLayout(_categoryList) {
@@ -473,6 +480,18 @@ function main() {
 
 		const divCategorySelection = document.createElement("div");
 		divCategorySelection.id = "divCategorySelection";
+
+		const btnBack = document.createElement("button");
+		btnBack.id = "btnBack";
+		btnBack.className = "btn btn-secondary";
+		btnBack.textContent = "Back";
+		btnBack.addEventListener("click", () => {
+			showMainMenuLayout();
+		});
+		divCategorySelection.appendChild(btnBack);
+
+		divCategorySelection.appendChild(document.createElement("br"));
+		divCategorySelection.appendChild(document.createElement("br"));
 
 		const lblCategoryList = document.createElement("label");
 		lblCategoryList.htmlFor = "selCategoryList";
@@ -510,6 +529,7 @@ function main() {
 
 		const btnCreateGame = document.createElement("button");
 		btnCreateGame.id = "btnCreateGame";
+		btnCreateGame.className = "btn btn-primary";
 		btnCreateGame.textContent = "Create Game";
 		btnCreateGame.addEventListener("click", () => {
 			const selectedCategory = _categoryList.find(c => c.id === parseInt(selCategoryList.value));
@@ -531,17 +551,7 @@ function main() {
 		});
 		divCategorySelection.appendChild(btnCreateGame);
 
-		divCategorySelection.appendChild(document.createElement("br"));
-
-		const btnBack = document.createElement("button");
-		btnBack.id = "btnBack";
-		btnBack.textContent = "Back";
-		btnBack.addEventListener("click", () => {
-			showMainMenuLayout();
-		});
-		divCategorySelection.appendChild(btnBack);
-
-		document.body.appendChild(divCategorySelection);
+		document.getElementById("screen").appendChild(divCategorySelection);
 	}
 
 	function showCategoryCreationLayout() {
@@ -628,6 +638,7 @@ function main() {
 
 		const btnCreateCtegory = document.createElement("button");
 		btnCreateCtegory.id = "btnCreateCtegory";
+		btnCreateCtegory.className = "btn btn-primary";
 		btnCreateCtegory.textContent = "Create Category";
 		btnCreateCtegory.addEventListener("click", () => {
 			const errors = document.getElementsByClassName("spanError");
@@ -690,13 +701,14 @@ function main() {
 
 		const btnBack = document.createElement("button");
 		btnBack.id = "btnBack";
+		btnBack.className = "btn btn-secondary";
 		btnBack.textContent = "Back";
 		btnBack.addEventListener("click", () => {
 			showMainMenuLayout();
 		});
 		divCategoryCreation.appendChild(btnBack);
 
-		document.body.appendChild(divCategoryCreation);
+		document.getElementById("screen").appendChild(divCategoryCreation);
 	}
 
 	function nameValidation(_name, _i, _usedNames) {
@@ -759,6 +771,7 @@ function main() {
 
 		const btnSend = document.createElement("button");
 		btnSend.id = "btnSend";
+		btnSend.className = "btn btn-primary";
 		btnSend.textContent = "Send Recovery Request";
 		btnSend.addEventListener("click", () => {
 			if (inputEmail.value) {
@@ -794,7 +807,7 @@ function main() {
 		});
 		divAccountRecovery.appendChild(spanRegister);
 
-		document.body.appendChild(divAccountRecovery);
+		document.getElementById("screen").appendChild(divAccountRecovery);
 	}
 
 	function showNewPasswordLayout(_recoveryCode) {
@@ -837,6 +850,7 @@ function main() {
 
 		const btnChangePassword = document.createElement("button");
 		btnChangePassword.id = "btnChangePassword";
+		btnChangePassword.className = "btn btn-primary";
 		btnChangePassword.textContent = "Change Password";
 		btnChangePassword.addEventListener("click", () => {
 			const inputNewPassword = document.getElementById("inputNewPassword");
@@ -861,13 +875,14 @@ function main() {
 
 		const btnCancel = document.createElement("button");
 		btnCancel.id = "btnCancel";
+		btnCancel.className = "btn btn-secondary";
 		btnCancel.textContent = "Cancel";
 		btnCancel.addEventListener("click", () => {
 			window.location.replace(domainURL);
 		});
 		divChangePassword.appendChild(btnCancel);
 
-		document.body.appendChild(divChangePassword);
+		document.getElementById("screen").appendChild(divChangePassword);
 	}
 
 	function showLobbyLayout(_gameId, _owner, _playersArray) {
@@ -882,6 +897,7 @@ function main() {
 	function spawnStartButton(_owner) {
 		const btnStart = document.createElement("button");
 		btnStart.id = "btnStart";
+		btnStart.className = "btn btn-success";
 		btnStart.textContent = "Start";
 		btnStart.addEventListener("click", () => {
 			const payload = {
@@ -896,17 +912,18 @@ function main() {
 		if (_owner !== thisConnection.username) btnStart.hidden = true;
 		else btnStart.disabled = true;
 
-		document.body.appendChild(btnStart);
+		document.getElementById("screen").appendChild(btnStart);
 	}
 
 	function spawnLeaveButton() {
 		const btnLeave = document.createElement("button");
 		btnLeave.id = "btnLeave";
+		btnLeave.className = "btn btn-danger";
 		btnLeave.textContent = "Leave";
 		btnLeave.addEventListener("click", () => {
 			leaveGame();
 		});
-		document.body.appendChild(btnLeave);
+		document.getElementById("screen").appendChild(btnLeave);
 	}
 
 	function leaveGame() {
@@ -926,13 +943,13 @@ function main() {
 		const divRoomCode = document.createElement("div");
 		divRoomCode.id = "divRoomCode";
 		divRoomCode.innerHTML = `<p id="pRoomCode"><b>Room code: </b>${gameId}</p>`;
-		document.body.appendChild(divRoomCode);
+		document.getElementById("screen").appendChild(divRoomCode);
 	}
 
 	function spawnPlayers(_players) {
 		const divPlayers = document.createElement("div");
 		divPlayers.id = "divPlayers";
-		document.body.appendChild(divPlayers);
+		document.getElementById("screen").appendChild(divPlayers);
 
 		updatePlayers(_players);
 	}
@@ -940,7 +957,7 @@ function main() {
 	function showGameLayout(_items, _yourItem, _tries) {
 		document.getElementById("divRoomCode").remove();
 
-		document.body.appendChild(document.createElement("br"));
+		document.getElementById("screen").appendChild(document.createElement("br"));
 
 		const divGame = document.createElement("div");
 		divGame.id = "divGame";
@@ -1016,7 +1033,7 @@ function main() {
 		pTries.innerText = `Tries left: ${_tries}`;
 		divGame.appendChild(pTries);
 
-		document.body.appendChild(divGame);
+		document.getElementById("screen").appendChild(divGame);
 	}
 
 	function showLeaderboardLayout(_data) {
@@ -1027,6 +1044,7 @@ function main() {
 
 		const btnBack = document.createElement("button");
 		btnBack.id = "btnBack";
+		btnBack.className = "btn btn-secondary";
 		btnBack.textContent = "Back";
 		btnBack.addEventListener("click", () => {
 			showMainMenuLayout();
@@ -1075,13 +1093,13 @@ function main() {
 			divLeaderboard.appendChild(document.createElement("br"));
 		}
 
-		document.body.appendChild(divLeaderboard);
+		document.getElementById("screen").appendChild(divLeaderboard);
 	}
 
 	function spawnChat() {
 		const divChat = document.createElement("div");
 		divChat.id = "divChat";
-		document.body.appendChild(divChat);
+		document.getElementById("screen").appendChild(divChat);
 
 		const chatTitle = document.createElement("h4");
 		chatTitle.innerHTML = "CHAT";
@@ -1159,11 +1177,7 @@ function main() {
 	}
 
 	function clearScreen() {
-		document.body.innerHTML = "";
-
-		const title = document.createElement("h1");
-		title.innerHTML = "Who is it? Online";
-		document.body.appendChild(title);
+		document.getElementById("screen").innerHTML = "";
 	}
 
 	function getURLParameter(sParam) {
