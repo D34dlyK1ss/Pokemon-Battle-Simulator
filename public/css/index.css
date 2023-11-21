@@ -140,12 +140,16 @@ td {
 	color: grey;
 }
 
-.link {
-	color: blue;
+.clickable {
+	color: grey;
 }
 
-.link:hover {
-	text-decoration: underline;
+.clickable:hover {
+	color: black;
+	cursor: pointer;
+}
+
+.span.user:hover {
 	cursor: pointer;
 }
 

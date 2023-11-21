@@ -80,7 +80,7 @@ wss.on("connection", ws => {
 
 		// Client wants to login
 		if (method === "login") {
-			if (result.type === "auto") return doLogin(ws, result.username, result.id);
+			if (result.type === "auto") return doLogin(ws, result.id, result.username, result.email);
 
 			loginQuery(ws, result.username, result.password);
 			return;
@@ -596,7 +596,7 @@ wss.on("connection", ws => {
 
 		if (method === "getProfile") {
 			db.query(
-				`SELECT wins, losses, (SUM(wins) + SUM(losses)) as total, ROUND((SUM(wins) * 100 / (SUM(wins) + SUM(losses))), 2) as win_rate, (CASE WHEN (SUM(wins) * 20 - SUM(losses) * 15) < 0 THEN 0 ELSE (SUM(wins) * 20 - SUM(losses) * 15) END) AS points, created_at FROM user WHERE username='${result.username}' GROUP BY id ORDER BY points DESC`,
+				`SELECT username, email, wins, losses, (SUM(wins) + SUM(losses)) as total, ROUND((SUM(wins) * 100 / (SUM(wins) + SUM(losses))), 2) as win_rate, (CASE WHEN (SUM(wins) * 20 - SUM(losses) * 15) < 0 THEN 0 ELSE (SUM(wins) * 20 - SUM(losses) * 15) END) AS points, created_at FROM user WHERE username='${result.username}' GROUP BY id ORDER BY points DESC`,
 				(err, res) => {
 					if (err) console.error(err);
 
@@ -655,18 +655,19 @@ function loginQuery(_ws, _username, _password) {
 				return _ws.send(JSON.stringify(payload));
 			}
 
-			doLogin(_ws, res[0].username, res[0].id);
+			doLogin(_ws, res[0].id, res[0].username, res[0].email);
 		}
 	);
 }
 
-function doLogin(_ws, _username, _id) {
+function doLogin(_ws, _id, _username, _email) {
 	loginToConsole(_username);
 
 	let payload = {
 		"method": "loggedIn",
 		"userId": _id,
-		"username": _username
+		"username": _username,
+		"email": _email
 	};
 
 	_ws.connectionData.username = _username;

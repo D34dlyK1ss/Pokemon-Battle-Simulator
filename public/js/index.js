@@ -50,13 +50,15 @@ function main() {
 
 			const id = localStorage.getItem("id");
 			const username = localStorage.getItem("username");
+			const email = localStorage.getItem("email");
 
 			if (username) {
 				const payload = {
 					"method": "login",
 					"type": "auto",
 					"id": id,
-					"username": username
+					"username": username,
+					"email": email
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -92,11 +94,14 @@ function main() {
 		if (method === "loggedIn") {
 			const userId = response.userId;
 			const username = response.username;
+			const email = response.email;
 
 			thisConnection.userId = userId;
 			thisConnection.username = username;
+			thisConnection.email = email;
 			localStorage.setItem("id", userId);
 			localStorage.setItem("username", username);
+			localStorage.setItem("email", email);
 			showMainMenuLayout();
 			return;
 		}
@@ -105,8 +110,10 @@ function main() {
 		if (method === "loggedOut") {
 			delete thisConnection.userId;
 			delete thisConnection.username;
+			delete thisConnection.email;
 			localStorage.removeItem("id");
 			localStorage.removeItem("username");
+			localStorage.removeItem("email");
 			showLoginLayout();
 			return;
 		}
@@ -266,7 +273,7 @@ function main() {
 		divLogin.appendChild(document.createElement("br"));
 
 		const aRecover = document.createElement("span");
-		aRecover.className = "link";
+		aRecover.className = "clickable";
 		aRecover.innerText = "Forgot password?";
 		aRecover.addEventListener("click", () => {
 			showAccountRecoveryLayout();
@@ -276,7 +283,7 @@ function main() {
 		divLogin.appendChild(document.createElement("br"));
 
 		const spanRegister = document.createElement("span");
-		spanRegister.className = "link";
+		spanRegister.className = "clickable";
 		spanRegister.innerText = "I want to register.";
 		spanRegister.addEventListener("click", () => {
 			showRegisterLayout();
@@ -369,7 +376,7 @@ function main() {
 		divRegister.appendChild(document.createElement("br"));
 
 		const spanLogin = document.createElement("span");
-		spanLogin.className = "link";
+		spanLogin.className = "clickable";
 		spanLogin.innerText = "I want to log in.";
 		spanLogin.addEventListener("click", () => {
 			showLoginLayout();
@@ -386,8 +393,6 @@ function main() {
 
 		const spanProfile = document.createElement("span");
 		spanProfile.id = "spanProfile";
-		spanProfile.setAttribute("data-bs-toggle", "modal");
-		spanProfile.setAttribute("data-bs-target", "#profileModal");
 		spanProfile.addEventListener("click", () => {
 			const payload = {
 				"method": "getProfile",
@@ -398,7 +403,7 @@ function main() {
 		});
 		const imgPicture = document.createElement("img");
 		imgPicture.id = "imgPicture";
-		imgPicture.src = "images/default_picture.jpg";
+		imgPicture.src = `https://gravatar.com/avatar/${thisConnection.email}?d=identicon`;
 		spanProfile.appendChild(imgPicture);
 		const pUsername = document.createElement("p");
 		pUsername.id = "pUsername";
@@ -798,7 +803,7 @@ function main() {
 		divAccountRecovery.appendChild(document.createElement("br"));
 
 		const spanLogin = document.createElement("span");
-		spanLogin.className = "link";
+		spanLogin.className = "clickable";
 		spanLogin.innerText = "I want to log in.";
 		spanLogin.addEventListener("click", () => {
 			showLoginLayout();
@@ -808,7 +813,7 @@ function main() {
 		divAccountRecovery.appendChild(document.createElement("br"));
 
 		const spanRegister = document.createElement("span");
-		spanRegister.className = "link";
+		spanRegister.className = "clickable";
 		spanRegister.innerText = "I want to register.";
 		spanRegister.addEventListener("click", () => {
 			showRegisterLayout();
@@ -1135,11 +1140,11 @@ function main() {
 		spanProfile.id = "spanProfileModal";
 		const imgPicture = document.createElement("img");
 		imgPicture.id = "imgPicture";
-		imgPicture.src = "images/default_picture.jpg";
+		imgPicture.src = `https://gravatar.com/avatar/${_data.email}?d=identicon`;
 		spanProfile.appendChild(imgPicture);
 		const pUsername = document.createElement("p");
 		pUsername.id = "pUsername";
-		pUsername.innerHTML = thisConnection.username;
+		pUsername.innerHTML = _data.username;
 		spanProfile.appendChild(pUsername);
 		html.appendChild(spanProfile);
 
@@ -1177,6 +1182,8 @@ function main() {
 		html.appendChild(spanPoints);
 
 		profileModalBody.innerHTML = html.innerHTML;
+		// eslint-disable-next-line no-undef
+		new bootstrap.Modal(document.getElementById("profileModal")).show();
 	}
 
 	function updateChat(_type, _name, _message) {
@@ -1206,13 +1213,25 @@ function main() {
 
 		let i = 0;
 
-		_arrayPlayers.forEach(player => {
-			const div = document.createElement("div");
-			const text = player.username === thisConnection.username ? "<b>You</b>" : player.username;
+		for (const player of _arrayPlayers) {
+			const divPlayer = document.createElement("div");
+			divPlayer.className = "player";
+			const spanPlayer = document.createElement("span");
+			spanPlayer.className = "clickable";
+			spanPlayer.innerHTML = player.username === thisConnection.username ? "You" : player.username;
+			spanPlayer.addEventListener("click", () => {
+				const payload = {
+					"method": "getProfile",
+					"username": player.username
+				};
 
-			div.innerHTML = `<b>Player ${++i}: </b>${text}`;
-			divPlayers.appendChild(div);
-		});
+				ws.send(JSON.stringify(payload));
+				console.log(player.username);
+			});
+			divPlayer.innerHTML = `<b>Player ${++i}: </b>`;
+			divPlayer.appendChild(spanPlayer);
+			divPlayers.appendChild(divPlayer);
+		}
 
 		if (_arrayPlayers[0].username === thisConnection.username) document.getElementById("btnStart").hidden = false;
 
@@ -1245,9 +1264,5 @@ function main() {
 		}
 	}
 }
-main();
 
-document.onkeydown = (e) => {
-	if (e.key === 123 || (e.ctrlKey && e.shiftKey && e.key === "I") || (e.ctrlKey && e.shiftKey && e.key === "C") || (e.ctrlKey && e.shiftKey && e.key === "J") || (e.ctrlKey && e.key === "U"))
-		e.preventDefault();
-};
+main();
