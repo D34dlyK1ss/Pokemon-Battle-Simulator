@@ -6,7 +6,7 @@
 
 - Histórico com informação das partidas (data e hora, duração, vencedor, categoria)
 
-- Tabela de classificação (total de jogos e percentagem de vitória)
+- ~~Tabela de classificação~~
 
 - ~~Categorias feitas por utilizadores públicas e privadas~~
 

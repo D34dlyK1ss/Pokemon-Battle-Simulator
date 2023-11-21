@@ -435,6 +435,9 @@ wss.on("connection", ws => {
 
 		if (method === "startGame") {
 			const gameId = result.gameId;
+
+			if (!lobbies[gameId]) return;
+
 			const items = lobbies[gameId].items;
 
 			lobbies[gameId].status = "playing";
@@ -485,6 +488,8 @@ wss.on("connection", ws => {
 		if (method === "sendChatMessage") {
 			const gameId = result.gameId;
 
+			if (!lobbies[gameId]) return;
+
 			payload = {
 				"method": "updateChat",
 				"type": "user",
@@ -501,6 +506,9 @@ wss.on("connection", ws => {
 
 		if (method === "guess") {
 			const gameId = result.gameId;
+
+			if (!lobbies[gameId]) return;
+
 			const guesserUsername = result.username;
 			let rightAnswer = null;
 
@@ -537,8 +545,9 @@ wss.on("connection", ws => {
 					}
 					else lobbies[gameId].winner = player;
 				});
-
-				return saveResultsToDatabase(lobbies[gameId]);
+				
+				saveResultsToDatabase(lobbies[gameId]);
+				return;
 			}
 			else if (lobbies[gameId].triesLeft[guesserUsername] <= 0) {
 				lobbies[gameId].status = "ended";
@@ -562,7 +571,8 @@ wss.on("connection", ws => {
 					}
 				});
 
-				return saveResultsToDatabase(lobbies[gameId]);
+				saveResultsToDatabase(lobbies[gameId]);
+				return;
 			}
 
 			return ws.send(JSON.stringify(payload));
@@ -577,6 +587,22 @@ wss.on("connection", ws => {
 					payload = {
 						"method": "getLeaderboard",
 						"data": res
+					};
+
+					ws.send(JSON.stringify(payload));
+				}
+			);
+		}
+
+		if (method === "getProfile") {
+			db.query(
+				`SELECT wins, losses, (SUM(wins) + SUM(losses)) as total, ROUND((SUM(wins) * 100 / (SUM(wins) + SUM(losses))), 2) as win_rate, (CASE WHEN (SUM(wins) * 20 - SUM(losses) * 15) < 0 THEN 0 ELSE (SUM(wins) * 20 - SUM(losses) * 15) END) AS points, created_at FROM user WHERE username='${result.username}' GROUP BY id ORDER BY points DESC`,
+				(err, res) => {
+					if (err) console.error(err);
+
+					payload = {
+						"method": "getProfile",
+						"data": res[0]
 					};
 
 					ws.send(JSON.stringify(payload));

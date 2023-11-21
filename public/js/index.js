@@ -10,7 +10,7 @@ function main() {
 		const method = response.method;
 
 		if (method === "alert") {
-			alert(response.message);
+			notify(response.message);
 
 			if (response.error) {
 				if (response.action === "recoveringAccount") window.location.replace(domainURL);
@@ -25,7 +25,6 @@ function main() {
 			const verificationCode = getURLParameter("email_verification");
 
 			thisConnection = response.connectionData;
-			spawnTitle();
 
 			if (verificationCode) {
 				const payload = {
@@ -67,7 +66,7 @@ function main() {
 		}
 
 		if (method === "verificationSent") {
-			alert("Registration validated. A verification email was sent.");
+			notify("Registration validated. A verification email was sent.");
 			showLoginLayout();
 			return;
 		}
@@ -78,13 +77,13 @@ function main() {
 		}
 
 		if (method === "accountRecovered") {
-			alert("Account password changed successfully!");
+			notify("Account password changed successfully!");
 			window.location.replace(domainURL);
 			return;
 		}
 
 		if (method === "emailVerified") {
-			alert("Email verified successfully!");
+			notify("Email verified successfully!");
 			window.location.replace(domainURL);
 			return;
 		}
@@ -161,21 +160,26 @@ function main() {
 
 		// Won the game
 		if (method === "gameWon") {
-			alert("You won!");
-			leaveGame();
+			document.getElementById("divGuess").remove();
+			notify("You won!");
 			return;
 		}
 
 		// Lost the game
 		if (method === "gameLost") {
-			alert("You lost!");
-			leaveGame();
+			notify("You lost!");
 			return;
 		}
-		
+
 		// Leaderboard
 		if (method === "getLeaderboard") {
 			showLeaderboardLayout(response.data);
+			return;
+		}
+
+		// Profile
+		if (method === "getProfile") {
+			showProfileInfo(response.data);
 			return;
 		}
 	};
@@ -191,17 +195,12 @@ function main() {
 		ws.send(JSON.stringify(payload));
 	}
 
-	function spawnTitle() {
-		const title = document.createElement("h1");
-		title.innerHTML = "Who is it? Online";
-		document.getElementById("screen").appendChild(title);
-	}
-
 	function showLoginLayout() {
 		clearScreen();
 
 		const divLogin = document.createElement("div");
 		divLogin.id = "divLogin";
+		document.getElementById("screen").appendChild(divLogin);
 
 		const lblUsername = document.createElement("label");
 		lblUsername.innerText = "Username / Email";
@@ -283,8 +282,6 @@ function main() {
 			showRegisterLayout();
 		});
 		divLogin.appendChild(spanRegister);
-
-		document.getElementById("screen").appendChild(divLogin);
 	}
 
 	function showRegisterLayout() {
@@ -292,6 +289,7 @@ function main() {
 
 		const divRegister = document.createElement("div");
 		divRegister.id = "divRegister";
+		document.getElementById("screen").appendChild(divRegister);
 
 		const lblUsername = document.createElement("label");
 		lblUsername.innerText = "Username";
@@ -377,8 +375,6 @@ function main() {
 			showLoginLayout();
 		});
 		divRegister.appendChild(spanLogin);
-
-		document.getElementById("screen").appendChild(divRegister);
 	}
 
 	function showMainMenuLayout() {
@@ -386,14 +382,29 @@ function main() {
 
 		const divMainMenu = document.createElement("div");
 		divMainMenu.id = "divMainMenu";
+		document.getElementById("screen").appendChild(divMainMenu);
 
-		const divProfile = document.createElement("div");
-		divProfile.id = "divProfile";
+		const spanProfile = document.createElement("span");
+		spanProfile.id = "spanProfile";
+		spanProfile.setAttribute("data-bs-toggle", "modal");
+		spanProfile.setAttribute("data-bs-target", "#profileModal");
+		spanProfile.addEventListener("click", () => {
+			const payload = {
+				"method": "getProfile",
+				"username": pUsername.textContent
+			};
+
+			ws.send(JSON.stringify(payload));
+		});
+		const imgPicture = document.createElement("img");
+		imgPicture.id = "imgPicture";
+		imgPicture.src = "images/default_picture.jpg";
+		spanProfile.appendChild(imgPicture);
 		const pUsername = document.createElement("p");
 		pUsername.id = "pUsername";
-		pUsername.innerHTML = `<h3>${thisConnection.username}</h3>`;
-		divProfile.appendChild(pUsername);
-		divMainMenu.appendChild(divProfile);
+		pUsername.textContent = thisConnection.username;
+		spanProfile.appendChild(pUsername);
+		divMainMenu.appendChild(spanProfile);
 
 		const btnNewGame = document.createElement("button");
 		btnNewGame.id = "btnNewGame";
@@ -417,7 +428,7 @@ function main() {
 		btnJoinGame.addEventListener("click", () => {
 			const inputJoinGame = document.getElementById("inputJoinGame");
 
-			if (!inputJoinGame.value) return alert("Please type a room code into the text box.");
+			if (!inputJoinGame.value) return notify("Please type a room code into the text box.");
 
 			joinGame(inputJoinGame.value);
 		});
@@ -471,8 +482,6 @@ function main() {
 			ws.send(JSON.stringify(payload));
 		});
 		divMainMenu.appendChild(btnLogout);
-
-		document.getElementById("screen").appendChild(divMainMenu);
 	}
 
 	function showCategorySelectionLayout(_categoryList) {
@@ -480,6 +489,7 @@ function main() {
 
 		const divCategorySelection = document.createElement("div");
 		divCategorySelection.id = "divCategorySelection";
+		document.getElementById("screen").appendChild(divCategorySelection);
 
 		const btnBack = document.createElement("button");
 		btnBack.id = "btnBack";
@@ -550,8 +560,6 @@ function main() {
 			ws.send(JSON.stringify(payload));
 		});
 		divCategorySelection.appendChild(btnCreateGame);
-
-		document.getElementById("screen").appendChild(divCategorySelection);
 	}
 
 	function showCategoryCreationLayout() {
@@ -559,6 +567,7 @@ function main() {
 
 		const divCategoryCreation = document.createElement("div");
 		divCategoryCreation.id = "divCategoryCreation";
+		document.getElementById("screen").appendChild(divCategoryCreation);
 
 		const lblName = document.createElement("label");
 		lblName.id = "lblName";
@@ -679,7 +688,7 @@ function main() {
 				if (isValid) itemsArray += JSON.stringify(itemObject) + ", ";
 				i++;
 			}
-			
+
 			itemsArray = itemsArray.substring(0, itemsArray.length - 2);
 			itemsArray += "]";
 
@@ -707,8 +716,6 @@ function main() {
 			showMainMenuLayout();
 		});
 		divCategoryCreation.appendChild(btnBack);
-
-		document.getElementById("screen").appendChild(divCategoryCreation);
 	}
 
 	function nameValidation(_name, _i, _usedNames) {
@@ -739,7 +746,7 @@ function main() {
 			spanError.textContent = "Picture link already in use";
 			return false;
 		}
-		
+
 		return true;
 	}
 
@@ -748,6 +755,7 @@ function main() {
 
 		const divAccountRecovery = document.createElement("div");
 		divAccountRecovery.id = "divAccountRecovery";
+		document.getElementById("screen").appendChild(divAccountRecovery);
 
 		const lblEmail = document.createElement("label");
 		lblEmail.innerText = "Please insert your email below.";
@@ -772,7 +780,7 @@ function main() {
 		const btnSend = document.createElement("button");
 		btnSend.id = "btnSend";
 		btnSend.className = "btn btn-primary";
-		btnSend.textContent = "Send Recovery Request";
+		btnSend.textContent = "Send Request";
 		btnSend.addEventListener("click", () => {
 			if (inputEmail.value) {
 				const payload = {
@@ -781,7 +789,7 @@ function main() {
 				};
 
 				ws.send(JSON.stringify(payload));
-				alert("Request sent successfully. If the email is registered, an account recovery email will be sent.");
+				notify("Request sent successfully. If the email is registered, an account recovery email will be sent.");
 				showLoginLayout();
 			}
 		});
@@ -806,8 +814,6 @@ function main() {
 			showRegisterLayout();
 		});
 		divAccountRecovery.appendChild(spanRegister);
-
-		document.getElementById("screen").appendChild(divAccountRecovery);
 	}
 
 	function showNewPasswordLayout(_recoveryCode) {
@@ -815,6 +821,7 @@ function main() {
 
 		const divChangePassword = document.createElement("div");
 		divChangePassword.id = "divChangePassword";
+		document.getElementById("screen").appendChild(divChangePassword);
 
 		const lblNewPassword = document.createElement("label");
 		lblNewPassword.innerText = "New Password";
@@ -881,20 +888,20 @@ function main() {
 			window.location.replace(domainURL);
 		});
 		divChangePassword.appendChild(btnCancel);
-
-		document.getElementById("screen").appendChild(divChangePassword);
 	}
 
-	function showLobbyLayout(_gameId, _owner, _playersArray) {
+	function showLobbyLayout(_gameId, _owner, _arrayPlayers) {
 		clearScreen();
-		spawnRoomCode(_gameId);
-		spawnStartButton(_owner);
-		spawnLeaveButton();
-		spawnPlayers(_playersArray);
-		spawnChat();
-	}
 
-	function spawnStartButton(_owner) {
+		const divLobby = document.createElement("div");
+		divLobby.id = "divLobby";
+		document.getElementById("screen").appendChild(divLobby);
+
+		const divRoomCode = document.createElement("div");
+		divRoomCode.id = "divRoomCode";
+		divRoomCode.innerHTML = `<p id="pRoomCode"><b>Room code: </b>${gameId}</p>`;
+		divLobby.appendChild(divRoomCode);
+
 		const btnStart = document.createElement("button");
 		btnStart.id = "btnStart";
 		btnStart.className = "btn btn-success";
@@ -908,14 +915,11 @@ function main() {
 			ws.send(JSON.stringify(payload));
 			document.getElementById("btnStart").remove();
 		});
-
 		if (_owner !== thisConnection.username) btnStart.hidden = true;
 		else btnStart.disabled = true;
 
-		document.getElementById("screen").appendChild(btnStart);
-	}
+		divLobby.appendChild(btnStart);
 
-	function spawnLeaveButton() {
 		const btnLeave = document.createElement("button");
 		btnLeave.id = "btnLeave";
 		btnLeave.className = "btn btn-danger";
@@ -923,7 +927,41 @@ function main() {
 		btnLeave.addEventListener("click", () => {
 			leaveGame();
 		});
-		document.getElementById("screen").appendChild(btnLeave);
+		divLobby.appendChild(btnLeave);
+
+		const divPlayers = document.createElement("div");
+		divPlayers.id = "divPlayers";
+		divLobby.appendChild(divPlayers);
+
+		updatePlayers(_arrayPlayers);
+
+		const divChat = document.createElement("div");
+		divChat.id = "divChat";
+		const chatTitle = document.createElement("h4");
+		chatTitle.innerHTML = "CHAT";
+		divChat.appendChild(chatTitle);
+		const divChatHistory = document.createElement("div");
+		divChatHistory.id = "divChatHistory";
+		divChat.appendChild(divChatHistory);
+		const inputMessage = document.createElement("input");
+		inputMessage.id = "inputMessage";
+		inputMessage.placeholder = "Chat here";
+
+		inputMessage.addEventListener("keydown", event => {
+			if (inputMessage.value && event.key === "Enter") {
+				const payload = {
+					"method": "sendChatMessage",
+					"gameId": gameId,
+					"username": thisConnection.username,
+					"text": inputMessage.value
+				};
+
+				ws.send(JSON.stringify(payload));
+				inputMessage.value = "";
+			}
+		});
+		divChat.appendChild(inputMessage);
+		divLobby.appendChild(divChat);
 	}
 
 	function leaveGame() {
@@ -939,28 +977,12 @@ function main() {
 		showMainMenuLayout();
 	}
 
-	function spawnRoomCode() {
-		const divRoomCode = document.createElement("div");
-		divRoomCode.id = "divRoomCode";
-		divRoomCode.innerHTML = `<p id="pRoomCode"><b>Room code: </b>${gameId}</p>`;
-		document.getElementById("screen").appendChild(divRoomCode);
-	}
-
-	function spawnPlayers(_players) {
-		const divPlayers = document.createElement("div");
-		divPlayers.id = "divPlayers";
-		document.getElementById("screen").appendChild(divPlayers);
-
-		updatePlayers(_players);
-	}
-
 	function showGameLayout(_items, _yourItem, _tries) {
 		document.getElementById("divRoomCode").remove();
 
-		document.getElementById("screen").appendChild(document.createElement("br"));
-
 		const divGame = document.createElement("div");
 		divGame.id = "divGame";
+		document.getElementById("screen").appendChild(divGame);
 
 		const tableBoard = document.createElement("table");
 		tableBoard.id = "tableBoard";
@@ -1000,40 +1022,50 @@ function main() {
 
 		divGame.appendChild(tableBoard);
 
-		// Player's item to be guessed
 		const yourItem = document.createElement("p");
 		yourItem.id = "pYourItem";
 		yourItem.innerText = _yourItem;
 		divGame.appendChild(yourItem);
 
-		// Input for guessing
+		const divGuess = document.createElement("div");
+		divGuess.id = "divGuess";
 		const inputGuess = document.createElement("input");
 		inputGuess.id = "inputGuess";
 		inputGuess.placeholder = "Type your answer here!";
-
 		inputGuess.addEventListener("keydown", event => {
 			if (inputGuess.value && event.key === "Enter") {
-				const payload = {
-					"method": "guess",
-					"gameId": gameId,
-					"username": thisConnection.username,
-					"guess": inputGuess.value
-				};
-
-				ws.send(JSON.stringify(payload));
+				guess(inputGuess.value);
 				inputGuess.value = "";
 			}
 		});
-
-		divGame.appendChild(inputGuess);
+		divGuess.appendChild(inputGuess);
+		const btnGuess = document.createElement("button");
+		btnGuess.id = "btnGuess";
+		btnGuess.className = "btn btn-success";
+		btnGuess.textContent = "Guess";
+		btnGuess.addEventListener("click", () => {
+			guess(inputGuess.value);
+			inputGuess.value = "";
+		});
+		divGuess.appendChild(btnGuess);
+		divGame.appendChild(divGuess);
 
 		// Player's item to be guessed
 		const pTries = document.createElement("p");
 		pTries.id = "pTries";
 		pTries.innerText = `Tries left: ${_tries}`;
 		divGame.appendChild(pTries);
+	}
 
-		document.getElementById("screen").appendChild(divGame);
+	function guess(_name) {
+		const payload = {
+			"method": "guess",
+			"gameId": gameId,
+			"username": thisConnection.username,
+			"guess": _name
+		};
+
+		ws.send(JSON.stringify(payload));
 	}
 
 	function showLeaderboardLayout(_data) {
@@ -1041,6 +1073,7 @@ function main() {
 
 		const divLeaderboard = document.createElement("div");
 		divLeaderboard.id = "divLeaderboard";
+		document.getElementById("screen").appendChild(divLeaderboard);
 
 		const btnBack = document.createElement("button");
 		btnBack.id = "btnBack";
@@ -1057,78 +1090,93 @@ function main() {
 		for (let user of _data) {
 			const divUser = document.createElement("div");
 			divUser.className = "divLeaderboardUser";
-			
+
 			const spanUsername = document.createElement("span");
-			spanUsername.id = "spanUsername";
+			spanUsername.className = "spanUsername";
 			spanUsername.innerHTML = `<b>${user.username}</b>`;
 			divUser.appendChild(spanUsername);
-			
+
 			const spanWins = document.createElement("span");
-			spanWins.id = "spanWins";
-			spanWins.textContent = `Wins: ${user.wins}`;
+			spanWins.className = "spanWins";
+			spanWins.innerHTML = `<b>Wins:</b> ${user.wins}`;
 			divUser.appendChild(spanWins);
-			
+
 			const spanLosses = document.createElement("span");
-			spanLosses.id = "spanLosses";
-			spanLosses.textContent = `Losses: ${user.losses}`;
+			spanLosses.className = "spanLosses";
+			spanLosses.innerHTML = `<b>Losses:</b> ${user.losses}`;
 			divUser.appendChild(spanLosses);
-			
+
 			const spanNMatches = document.createElement("span");
-			spanNMatches.id = "spanNMatches";
-			spanNMatches.textContent = `Total: ${user.total}`;
+			spanNMatches.className = "spanNMatches";
+			spanNMatches.innerHTML = `<b>Total:</b> ${user.total}`;
 			divUser.appendChild(spanNMatches);
-			
+
 			const spanWinRate = document.createElement("span");
-			spanWinRate.id = "spanWinRate";
-			spanWinRate.textContent = `Win Rate: ${user.win_rate}%`;
+			spanWinRate.className = "spanWinRate";
+			spanWinRate.innerHTML = `<b>Win Rate:</b> ${user.win_rate}%`;
 			divUser.appendChild(spanWinRate);
-			
+
 			const spanPoints = document.createElement("span");
-			spanPoints.id = "spanPoints";
-			spanPoints.textContent = `Points: ${user.points}`;
+			spanPoints.className = "spanPoints";
+			spanPoints.innerHTML = `<b>Points:</b> ${user.points}`;
 			divUser.appendChild(spanPoints);
 
 			divLeaderboard.appendChild(divUser);
 
 			divLeaderboard.appendChild(document.createElement("br"));
 		}
-
-		document.getElementById("screen").appendChild(divLeaderboard);
 	}
 
-	function spawnChat() {
-		const divChat = document.createElement("div");
-		divChat.id = "divChat";
-		document.getElementById("screen").appendChild(divChat);
+	function showProfileInfo(_data) {
+		const profileModalBody = document.getElementById("profileModalBody");
 
-		const chatTitle = document.createElement("h4");
-		chatTitle.innerHTML = "CHAT";
-		divChat.appendChild(chatTitle);
+		const html = document.createElement("div");
+		const spanProfile = document.createElement("span");
+		spanProfile.id = "spanProfileModal";
+		const imgPicture = document.createElement("img");
+		imgPicture.id = "imgPicture";
+		imgPicture.src = "images/default_picture.jpg";
+		spanProfile.appendChild(imgPicture);
+		const pUsername = document.createElement("p");
+		pUsername.id = "pUsername";
+		pUsername.innerHTML = thisConnection.username;
+		spanProfile.appendChild(pUsername);
+		html.appendChild(spanProfile);
 
-		const divChatHistory = document.createElement("div");
-		divChatHistory.id = "divChatHistory";
+		const spanWins = document.createElement("span");
+		spanWins.className = "spanWins";
+		spanWins.innerHTML = `<b>Wins:</b> ${_data.wins}`;
+		html.appendChild(spanWins);
 
-		divChat.appendChild(divChatHistory);
+		html.appendChild(document.createElement("br"));
 
-		const inputMessage = document.createElement("input");
-		inputMessage.id = "inputMessage";
-		inputMessage.placeholder = "Chat here";
+		const spanLosses = document.createElement("span");
+		spanLosses.className = "spanLosses";
+		spanLosses.innerHTML = `<b>Losses:</b> ${_data.losses}`;
+		html.appendChild(spanLosses);
 
-		inputMessage.addEventListener("keydown", event => {
-			if (inputMessage.value && event.key === "Enter") {
-				const payload = {
-					"method": "sendChatMessage",
-					"gameId": gameId,
-					"username": thisConnection.username,
-					"text": inputMessage.value
-				};
+		html.appendChild(document.createElement("br"));
 
-				ws.send(JSON.stringify(payload));
-				inputMessage.value = "";
-			}
-		});
+		const spanNMatches = document.createElement("span");
+		spanNMatches.className = "spanNMatches";
+		spanNMatches.innerHTML = `<b>Total:</b> ${_data.total}`;
+		html.appendChild(spanNMatches);
 
-		divChat.appendChild(inputMessage);
+		html.appendChild(document.createElement("br"));
+
+		const spanWinRate = document.createElement("span");
+		spanWinRate.className = "spanWinRate";
+		spanWinRate.innerHTML = `<b>Win Rate:</b> ${_data.win_rate}%`;
+		html.appendChild(spanWinRate);
+
+		html.appendChild(document.createElement("br"));
+
+		const spanPoints = document.createElement("span");
+		spanPoints.className = "spanPoints";
+		spanPoints.innerHTML = `<b>Points:</b> ${_data.points}`;
+		html.appendChild(spanPoints);
+
+		profileModalBody.innerHTML = html.innerHTML;
 	}
 
 	function updateChat(_type, _name, _message) {
@@ -1180,6 +1228,12 @@ function main() {
 		document.getElementById("screen").innerHTML = "";
 	}
 
+	function notify(_message) {
+		document.getElementById("notificationModalBody").innerHTML = _message;
+		// eslint-disable-next-line no-undef
+		new bootstrap.Modal(document.getElementById("notificationModal")).show();
+	}
+
 	function getURLParameter(sParam) {
 		let sPageURL = window.location.search.substring(1);
 		let sURLVariables = sPageURL.split("&");
@@ -1191,5 +1245,9 @@ function main() {
 		}
 	}
 }
-
 main();
+
+document.onkeydown = (e) => {
+	if (e.key === 123 || (e.ctrlKey && e.shiftKey && e.key === "I") || (e.ctrlKey && e.shiftKey && e.key === "C") || (e.ctrlKey && e.shiftKey && e.key === "J") || (e.ctrlKey && e.key === "U"))
+		e.preventDefault();
+};
