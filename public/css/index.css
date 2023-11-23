@@ -22,10 +22,6 @@ body {
 	background-color: cornflowerblue;
 }
 
-#divJoinGame input {
-	margin: 2px;
-}
-
 button {
 	margin: 2px;
 }
@@ -36,6 +32,10 @@ td {
 	text-align: center;
 	border: 1px solid black;
 	border-collapse: collapse;
+}
+
+#inputJoinGame, #selCategoryList, #inputTries, #inputName, #cbPublic {
+	margin-left: 3px;
 }
 
 #container {
@@ -52,9 +52,9 @@ td {
 }
 
 #screen {
-	width: 60%;
-	height: 80%;
-	padding: 1%;
+	width: 75rem;
+	height: 45rem;
+	padding: 2rem;
 	background-color: white;
 	box-shadow: -2px 2px 4px 0 rgba(0, 0, 0, 0.3);
 	border-radius: 10px;
@@ -90,6 +90,13 @@ td {
 	font-weight: bold;
 }
 
+#divLeaderboard {
+	width: fit-content;
+	height: 36rem;
+	overflow: auto;
+	scroll-behavior: smooth;
+}
+
 #pRoomCode {
 	user-select: text;
 	font-size: x-large;
@@ -107,6 +114,7 @@ td {
 	height: 130px;
 	width: 260px;
 	overflow: auto;
+	scroll-behavior: smooth;
 }
 
 #inputMessage {
@@ -122,10 +130,22 @@ td {
 	padding: 5px;
 }
 
+.itemName, .itemPicture {
+	margin-bottom: 5px;
+}
+
 .divLeaderboardUser {
 	border: 1px solid black;
 	height: 50px;
 	width: 500px;
+}
+
+.itemName {
+	width: 170px;
+}
+
+.itemPicture {
+	width: 170px;
 }
 
 .chat.message {

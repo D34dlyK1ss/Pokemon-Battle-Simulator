@@ -68,8 +68,8 @@ wss.on("connection", ws => {
 
 		if (username) {
 			const gameId = usersInGame.get(username);
-			if (lobbies[gameId]) removePlayerFromGame(lobbies[gameId].id, username);
 
+			if (lobbies[gameId]) removePlayerFromGame(lobbies[gameId].id, username);
 			logoutToConsole(username);
 		}
 	});
@@ -94,6 +94,7 @@ wss.on("connection", ws => {
 				const gameId = usersInGame.get(username);
 
 				if (lobbies[gameId]) removePlayerFromGame(lobbies[gameId].id, username);
+				else usersInGame.delete(username);
 			}
 
 			payload = {
@@ -119,6 +120,7 @@ wss.on("connection", ws => {
 						payload = {
 							"method": "alert",
 							"error": true,
+							"header": "Error",
 							"action": "register",
 							"message": "Failed to register. Username or email are already in use."
 						};
@@ -204,6 +206,7 @@ wss.on("connection", ws => {
 				payload = {
 					"method": "alert",
 					"error": true,
+					"header": "Error",
 					"action": "verifyingEmail",
 					"message": "The link has expired. Please register again."
 				};
@@ -240,6 +243,7 @@ wss.on("connection", ws => {
 				payload = {
 					"method": "alert",
 					"error": true,
+					"header": "Error",
 					"action": "recoveringAccount",
 					"message": "The link has expired. Please request another account recovery."
 				};
@@ -264,6 +268,7 @@ wss.on("connection", ws => {
 				payload = {
 					"method": "alert",
 					"error": true,
+					"header": "Error",
 					"action": "changePassword",
 					"message": ""
 				};
@@ -324,6 +329,7 @@ wss.on("connection", ws => {
 				payload = {
 					"method": "alert",
 					"error": true,
+					"header": "Error",
 					"action": "joinGame",
 					"message": "Failed to create a new game. You're already playing a game."
 				};
@@ -365,6 +371,7 @@ wss.on("connection", ws => {
 				payload = {
 					"method": "alert",
 					"error": true,
+					"header": "Error",
 					"action": "joinGame",
 					"message": "Failed to join a game. You're already playing a game."
 				};
@@ -377,6 +384,7 @@ wss.on("connection", ws => {
 				payload = {
 					"method": "alert",
 					"error": true,
+					"header": "Error",
 					"action": "joinGame",
 					"message": "Failed to join a game. The game doesn't exist."
 				};
@@ -389,6 +397,7 @@ wss.on("connection", ws => {
 				payload = {
 					"method": "alert",
 					"error": true,
+					"header": "Error",
 					"action": "joinGame",
 					"message": "Failed to join game. The game reached max players."
 				};
@@ -537,6 +546,7 @@ wss.on("connection", ws => {
 
 				lobbies[gameId].players.forEach(player => {
 					if (player.username !== guesserUsername) {
+						lobbies[gameId].loser = player;
 						payload = {
 							"method": "gameLost"
 						};
@@ -569,6 +579,7 @@ wss.on("connection", ws => {
 
 						activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 					}
+					else lobbies[gameId].loser = player;
 				});
 
 				saveResultsToDatabase(lobbies[gameId]);
@@ -580,7 +591,7 @@ wss.on("connection", ws => {
 
 		if (method === "getLeaderboard") {
 			db.query(
-				"SELECT id, username, wins, losses, (SUM(wins) + SUM(losses)) as total, ROUND((SUM(wins) * 100 / (SUM(wins) + SUM(losses))), 2) as win_rate, (CASE WHEN (SUM(wins) * 20 - SUM(losses) * 15) < 0 THEN 0 ELSE (SUM(wins) * 20 - SUM(losses) * 15) END) AS points FROM user GROUP BY id ORDER BY points DESC",
+				"SELECT username, wins, losses, (SUM(wins) + SUM(losses)) AS total, (CASE WHEN (ROUND((SUM(wins) * 100 / NULLIF((SUM(wins) + SUM(losses)), 0)), 2)) IS NULL THEN 0 ELSE (ROUND((SUM(wins) * 100 / NULLIF((SUM(wins) + SUM(losses)), 0)), 2)) END) AS win_rate, (CASE WHEN (SUM(wins) * 20 - SUM(losses) * 15) < 0 THEN 0 ELSE (SUM(wins) * 20 - SUM(losses) * 15) END) AS points FROM user GROUP BY id HAVING total > 0 ORDER BY points DESC LIMIT 100",
 				(err, res) => {
 					if (err) console.error(err);
 
@@ -596,7 +607,7 @@ wss.on("connection", ws => {
 
 		if (method === "getProfile") {
 			db.query(
-				`SELECT username, email, wins, losses, (SUM(wins) + SUM(losses)) as total, ROUND((SUM(wins) * 100 / (SUM(wins) + SUM(losses))), 2) as win_rate, (CASE WHEN (SUM(wins) * 20 - SUM(losses) * 15) < 0 THEN 0 ELSE (SUM(wins) * 20 - SUM(losses) * 15) END) AS points, created_at FROM user WHERE username='${result.username}' GROUP BY id ORDER BY points DESC`,
+				`SELECT username, email, wins, losses, (SUM(wins) + SUM(losses)) AS total, (CASE WHEN (ROUND((SUM(wins) * 100 / NULLIF((SUM(wins) + SUM(losses)), 0)), 2)) IS NULL THEN 0 ELSE (ROUND((SUM(wins) * 100 / NULLIF((SUM(wins) + SUM(losses)), 0)), 2)) END) AS win_rate, (CASE WHEN (SUM(wins) * 20 - SUM(losses) * 15) < 0 THEN 0 ELSE (SUM(wins) * 20 - SUM(losses) * 15) END) AS points, created_at FROM user WHERE username='${result.username}'`,
 				(err, res) => {
 					if (err) console.error(err);
 
@@ -648,6 +659,7 @@ function loginQuery(_ws, _username, _password) {
 				payload = {
 					"method": "alert",
 					"error": true,
+					"header": "Error",
 					"action": "login",
 					"message": "Failed to log in. Username/email or password incorrect."
 				};
@@ -682,29 +694,30 @@ function removePlayerFromGame(_gameId, _leavingPlayer) {
 
 	if (!lobbies[_gameId]) return;
 
-	for (const player of lobbies[_gameId].players) {
-		if (lobbies[_gameId].status === "waiting" && player.username === _leavingPlayer) {
-			lobbies[_gameId].players.splice(lobbies[_gameId].players.indexOf(player), 1);
-		}
-		else if (lobbies[_gameId].status === "playing" && player.username !== _leavingPlayer) {
-			lobbies[_gameId].status = "ended";
-			lobbies[_gameId].ended = Date.now();
-			lobbies[_gameId].winner = player;
-
-			saveResultsToDatabase(lobbies[_gameId]);
-
-			const payload = {
-				"method": "gameWon"
-			};
-
-			activeConnections.get(player.connectionId).send(JSON.stringify(payload));
-
-			delete lobbies[_gameId];
-			break;
+	if (lobbies[_gameId].status === "waiting") {
+		for (const player of lobbies[_gameId].players) {
+			if (player.username === _leavingPlayer) lobbies[_gameId].players.splice(lobbies[_gameId].players.indexOf(player), 1);
 		}
 	}
+	else if (lobbies[_gameId].status === "playing") {
+		lobbies[_gameId].status = "ended";
+		lobbies[_gameId].ended = Date.now();
 
-	if (!lobbies[_gameId]) return;
+		for (const player of lobbies[_gameId].players) {
+			if (player.username !== _leavingPlayer) {
+				lobbies[_gameId].winner = player;
+	
+				const payload = {
+					"method": "gameWon"
+				};
+	
+				activeConnections.get(player.connectionId).send(JSON.stringify(payload));
+			}
+			else lobbies[_gameId].loser = player;
+		}
+		
+		saveResultsToDatabase(lobbies[_gameId]);
+	}
 
 	if (lobbies[_gameId].players.length === 0) delete lobbies[_gameId];
 	else {
@@ -740,10 +753,25 @@ function saveResultsToDatabase(_game) {
 	const playerTries1 = 2 - _game.triesLeft[playerUsername1];
 	const playerTries2 = 2 - _game.triesLeft[playerUsername2];
 	const duration = Math.round((_game.ended - _game.started) / 1000);
-	const winner = _game.winner;
+	const winnerId = _game.winner.id;
+	const loserId = _game.loser.id;
 
 	db.query(
-		`INSERT INTO game_match (category_id, player1_id,  player2_id, player1_tries,  player2_tries, duration, winner) VALUES (${categoryId}, ${playerId1}, ${playerId2}, ${playerTries1}, ${playerTries2}, ${duration}, ${winner.id})`,
+		`INSERT INTO game_match (category_id, player1_id,  player2_id, player1_tries,  player2_tries, winner_id, loser_id, duration) VALUES (${categoryId}, ${playerId1}, ${playerId2}, ${playerTries1}, ${playerTries2}, ${winnerId}, ${loserId}, ${duration})`,
+		(err) => {
+			if (err) return console.error(err);
+		}
+	);
+
+	db.query(
+		`UPDATE user set wins = wins + 1 where id=${winnerId}`,
+		(err) => {
+			if (err) return console.error(err);
+		}
+	);
+
+	db.query(
+		`UPDATE user set losses = losses + 1 where id=${loserId}`,
 		(err) => {
 			if (err) return console.error(err);
 		}

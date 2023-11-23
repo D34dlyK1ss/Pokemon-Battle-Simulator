@@ -10,7 +10,7 @@ function main() {
 		const method = response.method;
 
 		if (method === "alert") {
-			notify(response.message);
+			notify(response.header, response.message);
 
 			if (response.error) {
 				if (response.action === "recoveringAccount") window.location.replace(domainURL);
@@ -68,8 +68,8 @@ function main() {
 		}
 
 		if (method === "verificationSent") {
-			notify("Registration validated. A verification email was sent.");
 			showLoginLayout();
+			notify("Success", "A verification email was sent.");
 			return;
 		}
 
@@ -79,14 +79,12 @@ function main() {
 		}
 
 		if (method === "accountRecovered") {
-			notify("Account password changed successfully!");
-			window.location.replace(domainURL);
+			notify("Success", "Account password changed.", true);
 			return;
 		}
 
 		if (method === "emailVerified") {
-			notify("Email verified successfully!");
-			window.location.replace(domainURL);
+			notify("Success", "Email verified.", true);
 			return;
 		}
 
@@ -168,13 +166,14 @@ function main() {
 		// Won the game
 		if (method === "gameWon") {
 			document.getElementById("divGuess").remove();
-			notify("You won!");
+			notify(null, "You won!");
 			return;
 		}
 
 		// Lost the game
 		if (method === "gameLost") {
-			notify("You lost!");
+			document.getElementById("divGuess").remove();
+			notify(null, "You lost!");
 			return;
 		}
 
@@ -186,7 +185,7 @@ function main() {
 
 		// Profile
 		if (method === "getProfile") {
-			showProfileInfo(response.data);
+			getProfileInfo(response.data);
 			return;
 		}
 	};
@@ -433,7 +432,10 @@ function main() {
 		btnJoinGame.addEventListener("click", () => {
 			const inputJoinGame = document.getElementById("inputJoinGame");
 
-			if (!inputJoinGame.value) return notify("Please type a room code into the text box.");
+			if (!inputJoinGame.value) {
+				notify("Error", "Please type a room code into the text box.");
+				return;
+			}
 
 			joinGame(inputJoinGame.value);
 		});
@@ -574,6 +576,18 @@ function main() {
 		divCategoryCreation.id = "divCategoryCreation";
 		document.getElementById("screen").appendChild(divCategoryCreation);
 
+		const btnBack = document.createElement("button");
+		btnBack.id = "btnBack";
+		btnBack.className = "btn btn-secondary";
+		btnBack.textContent = "Back";
+		btnBack.addEventListener("click", () => {
+			showMainMenuLayout();
+		});
+		divCategoryCreation.appendChild(btnBack);
+
+		divCategoryCreation.appendChild(document.createElement("br"));
+		divCategoryCreation.appendChild(document.createElement("br"));
+
 		const lblName = document.createElement("label");
 		lblName.id = "lblName";
 		lblName.htmlFor = "inputName";
@@ -710,17 +724,6 @@ function main() {
 			ws.send(JSON.stringify(payload));
 		});
 		divCategoryCreation.appendChild(btnCreateCtegory);
-
-		divCategoryCreation.appendChild(document.createElement("br"));
-
-		const btnBack = document.createElement("button");
-		btnBack.id = "btnBack";
-		btnBack.className = "btn btn-secondary";
-		btnBack.textContent = "Back";
-		btnBack.addEventListener("click", () => {
-			showMainMenuLayout();
-		});
-		divCategoryCreation.appendChild(btnBack);
 	}
 
 	function nameValidation(_name, _i, _usedNames) {
@@ -794,8 +797,8 @@ function main() {
 				};
 
 				ws.send(JSON.stringify(payload));
-				notify("Request sent successfully. If the email is registered, an account recovery email will be sent.");
 				showLoginLayout();
+				notify("Success", "If the email is registered, an account recovery email will be sent.");
 			}
 		});
 		divAccountRecovery.appendChild(btnSend);
@@ -1076,9 +1079,9 @@ function main() {
 	function showLeaderboardLayout(_data) {
 		clearScreen();
 
-		const divLeaderboard = document.createElement("div");
-		divLeaderboard.id = "divLeaderboard";
-		document.getElementById("screen").appendChild(divLeaderboard);
+		const divLeaderboardLayout = document.createElement("div");
+		divLeaderboardLayout.id = "divLeaderboardLayout";
+		document.getElementById("screen").appendChild(divLeaderboardLayout);
 
 		const btnBack = document.createElement("button");
 		btnBack.id = "btnBack";
@@ -1087,10 +1090,21 @@ function main() {
 		btnBack.addEventListener("click", () => {
 			showMainMenuLayout();
 		});
-		divLeaderboard.appendChild(btnBack);
+		divLeaderboardLayout.appendChild(btnBack);
 
-		divLeaderboard.appendChild(document.createElement("br"));
-		divLeaderboard.appendChild(document.createElement("br"));
+		divLeaderboardLayout.appendChild(document.createElement("br"));
+		divLeaderboardLayout.appendChild(document.createElement("br"));
+
+		const leaderboardTitle = document.createElement("h3");
+		leaderboardTitle.id = "leaderboardTitle";
+		leaderboardTitle.textContent = "Top 100 Best Players by Points";
+		divLeaderboardLayout.appendChild(leaderboardTitle);
+
+		divLeaderboardLayout.appendChild(document.createElement("br"));
+
+		const divLeaderboard = document.createElement("div");
+		divLeaderboard.id = "divLeaderboard";
+		divLeaderboardLayout.appendChild(divLeaderboard);
 
 		for (let user of _data) {
 			const divUser = document.createElement("div");
@@ -1128,11 +1142,11 @@ function main() {
 
 			divLeaderboard.appendChild(divUser);
 
-			divLeaderboard.appendChild(document.createElement("br"));
+			if (divLeaderboardLayout.lastElementChild !== divUser) divLeaderboard.appendChild(document.createElement("br"));
 		}
 	}
 
-	function showProfileInfo(_data) {
+	function getProfileInfo(_data) {
 		const profileModalBody = document.getElementById("profileModalBody");
 
 		const html = document.createElement("div");
@@ -1226,7 +1240,6 @@ function main() {
 				};
 
 				ws.send(JSON.stringify(payload));
-				console.log(player.username);
 			});
 			divPlayer.innerHTML = `<b>Player ${++i}: </b>`;
 			divPlayer.appendChild(spanPlayer);
@@ -1240,15 +1253,26 @@ function main() {
 	}
 
 	function updateTries(_nTries) {
-		document.getElementById("pTries").innerHTML = `Tries left: ${_nTries}`;
+		const tries = document.getElementById("pTries");
+
+		tries.innerHTML = `Tries left: ${_nTries}`;
+		tries.style.color = "red";
+		setTimeout(function () {
+			tries.style.transition = "color 1.5s ease";
+			tries.style.color = "black";
+		}, 500);
 	}
 
 	function clearScreen() {
 		document.getElementById("screen").innerHTML = "";
 	}
 
-	function notify(_message) {
+	function notify(_header, _message, _redirect) {
 		document.getElementById("notificationModalBody").innerHTML = _message;
+		
+		if (_header) document.getElementById("notificationModalHeader").innerHTML = `<h4>${_header}</h4>`;
+		if (_redirect) document.getElementById("notificationModalButton").addEventListener("click", () => window.location.replace(domainURL));
+
 		// eslint-disable-next-line no-undef
 		new bootstrap.Modal(document.getElementById("notificationModal")).show();
 	}
@@ -1256,6 +1280,7 @@ function main() {
 	function getURLParameter(sParam) {
 		let sPageURL = window.location.search.substring(1);
 		let sURLVariables = sPageURL.split("&");
+
 		for (let i = 0; i < sURLVariables.length; i++) {
 			let sParameterName = sURLVariables[i].split("=");
 			if (sParameterName[0] == sParam) {
