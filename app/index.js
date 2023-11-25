@@ -293,7 +293,7 @@ wss.on("connection", ws => {
 
 		if (method === "getCategoryList") {
 			db.query(
-				"SELECT id, user_id, name, items, type FROM category",
+				"SELECT id, user_id, name, items, type FROM category WHERE isPublic=true",
 				(err, res) => {
 					if (err) return console.error(err);
 
@@ -555,7 +555,7 @@ wss.on("connection", ws => {
 					}
 					else lobbies[gameId].winner = player;
 				});
-				
+
 				saveResultsToDatabase(lobbies[gameId]);
 				return;
 			}
@@ -606,17 +606,28 @@ wss.on("connection", ws => {
 		}
 
 		if (method === "getProfile") {
+			const userId = result.userId;
+
 			db.query(
-				`SELECT username, email, wins, losses, (SUM(wins) + SUM(losses)) AS total, (CASE WHEN (ROUND((SUM(wins) * 100 / NULLIF((SUM(wins) + SUM(losses)), 0)), 2)) IS NULL THEN 0 ELSE (ROUND((SUM(wins) * 100 / NULLIF((SUM(wins) + SUM(losses)), 0)), 2)) END) AS win_rate, (CASE WHEN (SUM(wins) * 20 - SUM(losses) * 15) < 0 THEN 0 ELSE (SUM(wins) * 20 - SUM(losses) * 15) END) AS points, created_at FROM user WHERE username='${result.username}'`,
+				`SELECT username, email, wins, losses, (SUM(wins) + SUM(losses)) AS total, (CASE WHEN (ROUND((SUM(wins) * 100 / NULLIF((SUM(wins) + SUM(losses)), 0)), 2)) IS NULL THEN 0 ELSE (ROUND((SUM(wins) * 100 / NULLIF((SUM(wins) + SUM(losses)), 0)), 2)) END) AS win_rate, (CASE WHEN (SUM(wins) * 20 - SUM(losses) * 15) < 0 THEN 0 ELSE (SUM(wins) * 20 - SUM(losses) * 15) END) AS points, created_at FROM user WHERE id='${userId}'`,
 				(err, res) => {
 					if (err) console.error(err);
 
-					payload = {
-						"method": "getProfile",
-						"data": res[0]
-					};
+					const userInfo = res[0];
 
-					ws.send(JSON.stringify(payload));
+					db.query(
+						`SELECT gm.*, c.name AS category_name, u1.username AS player1_username, u1.email AS player1_email, u2.username AS player2_username, u2.email AS player2_email FROM game_match gm JOIN category c ON gm.category_id = c.id JOIN user u1 ON gm.player1_id = u1.id JOIN user u2 ON gm.player2_id = u2.id WHERE player1_id=${userId} OR player2_id=${userId}`,
+						(err, res) => {
+							if (err) console.error(err);
+							payload = {
+								"method": "getProfile",
+								"userInfo": userInfo,
+								"matchHistory": res
+							};
+
+							ws.send(JSON.stringify(payload));
+						}
+					);
 				}
 			);
 		}
@@ -706,16 +717,16 @@ function removePlayerFromGame(_gameId, _leavingPlayer) {
 		for (const player of lobbies[_gameId].players) {
 			if (player.username !== _leavingPlayer) {
 				lobbies[_gameId].winner = player;
-	
+
 				const payload = {
 					"method": "gameWon"
 				};
-	
+
 				activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 			}
 			else lobbies[_gameId].loser = player;
 		}
-		
+
 		saveResultsToDatabase(lobbies[_gameId]);
 	}
 
@@ -752,7 +763,7 @@ function saveResultsToDatabase(_game) {
 	const playerUsername2 = player2.username;
 	const playerTries1 = 2 - _game.triesLeft[playerUsername1];
 	const playerTries2 = 2 - _game.triesLeft[playerUsername2];
-	const duration = Math.round((_game.ended - _game.started) / 1000);
+	const duration = Math.round(_game.ended - _game.started);
 	const winnerId = _game.winner.id;
 	const loserId = _game.loser.id;
 
@@ -802,16 +813,7 @@ function cleanMessage(_message) {
 }
 
 function dateTimeString() {
-	const date = new Date();
-	const HH = date.getHours().toString().padStart(2, "0");
-	const mm = date.getMinutes().toString().padStart(2, "0");
-	const ss = date.getSeconds().toString().padStart(2, "0");
-	const sss = date.getMilliseconds().toString().padStart(3, "0");
-	const DD = date.getDate().toString().padStart(2, "0");
-	const MM = (date.getMonth() + 1).toString().padStart(2, "0");
-	const YYYY = date.getFullYear();
-
-	return `[${DD}-${MM}-${YYYY} ${HH}:${mm}:${ss}.${sss}]`;
+	return `[${new Date().toLocaleDateString("en-US", { day: "numeric", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}]`;
 }
 
 function loginToConsole(_username) {

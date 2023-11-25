@@ -11,8 +11,6 @@
 body, html {
     width: 100%;
     height: 100%;
-    margin: 0;
-    padding: 0;
     border: none;
 }
 
@@ -38,6 +36,10 @@ td {
 	margin-left: 3px;
 }
 
+#inputUsername, #inputEmail, #inputPassword, #inputNewPassword, #inputConfirmPassword {
+	margin-right: 5px;
+}
+
 #container {
     display: flex;
     flex-direction: column;
@@ -61,38 +63,16 @@ td {
 	display: flex;
 }
 
-#spanProfile {
-	cursor: pointer;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	width: fit-content;
-	block-size: fit-content;
-}
-
-#spanProfileModal {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-}
-
-#imgPicture {
-	width: 100px;
-	height: 100px;
-	border-radius: 50%;
-	border: 3px solid;
-}
-
-#pUsername {
-	font-size: 20px;
-	margin-top: 10px;
-	text-align: center;
-	font-weight: bold;
-}
-
 #divLeaderboard {
 	width: fit-content;
 	height: 36rem;
+	overflow: auto;
+	scroll-behavior: smooth;
+}
+
+#divMatchHistory {
+	width: fit-content;
+	height: 30rem;
 	overflow: auto;
 	scroll-behavior: smooth;
 }
@@ -130,14 +110,79 @@ td {
 	padding: 5px;
 }
 
+.spanProfile {
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: fit-content;
+	block-size: fit-content;
+}
+
+.divStats {
+	display: flex;
+	flex-direction: column;
+}
+
+.imgPicture {
+	border-radius: 50%;
+}
+
+.imgPicture.menu {
+	border: 3px solid;
+	width: 100px;
+}
+
+.imgPicture.match {
+	border: 2px solid;
+	width: 50px;
+}
+
+.pUsername {
+	text-align: center;
+}
+
+.pUsername.menu {
+	font-size: 20px;
+}
+
+.pUsername.match {
+	font-size: 15px;
+	margin: 0;
+}
+
+.spanError {
+	color: red;
+}
+
+.vs {
+	font-weight: bold;
+	font-size: large;
+}
+
 .itemName, .itemPicture {
 	margin-bottom: 5px;
 }
 
-.divLeaderboardUser {
+.divPlayersMatch {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+}
+
+.divLeaderboardUser, .divMatch {
+	display: flex;
+	align-items: center;
 	border: 1px solid black;
-	height: 50px;
-	width: 500px;
+	width: 47rem;
+}
+
+.divLeaderboardUser {
+	flex-direction: row;
+}
+
+.divMatch {
+	flex-direction: column;
 }
 
 .itemName {

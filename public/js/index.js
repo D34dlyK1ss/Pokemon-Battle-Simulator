@@ -185,7 +185,7 @@ function main() {
 
 		// Profile
 		if (method === "getProfile") {
-			getProfileInfo(response.data);
+			getProfileInfo(response.userInfo, response.matchHistory);
 			return;
 		}
 	};
@@ -223,6 +223,10 @@ function main() {
 			if (event.key === "Enter") document.getElementById("btnLogin").click();
 		});
 		divLogin.appendChild(inputUsername);
+		const spanErrorUsername = document.createElement("span");
+		spanErrorUsername.id = "spanErrorUsername";
+		spanErrorUsername.className = "spanError";
+		divLogin.appendChild(spanErrorUsername);
 
 		divLogin.appendChild(document.createElement("br"));
 		divLogin.appendChild(document.createElement("br"));
@@ -242,6 +246,10 @@ function main() {
 			if (event.key === "Enter") document.getElementById("btnLogin").click();
 		});
 		divLogin.appendChild(inputPassword);
+		const spanErrorPassword = document.createElement("span");
+		spanErrorPassword.id = "spanErrorPassword";
+		spanErrorPassword.className = "spanError";
+		divLogin.appendChild(spanErrorPassword);
 
 		divLogin.appendChild(document.createElement("br"));
 		divLogin.appendChild(document.createElement("br"));
@@ -254,10 +262,10 @@ function main() {
 			const inputUsername = document.getElementById("inputUsername");
 			const inputPassword = document.getElementById("inputPassword");
 
-			if (!inputUsername.value) return inputUsername.style.backgroundColor = "red";
-			else inputUsername.style.backgroundColor = "white";
-			if (!inputPassword.value) return inputPassword.style.backgroundColor = "red";
-			else inputPassword.style.backgroundColor = "white";
+			if (!inputUsername.value) return spanErrorUsername.innerHTML = "Username missing";
+			else spanErrorUsername.innerHTML = null;
+			if (!inputPassword.value) return spanErrorPassword.innerHTML = "Password missing";
+			else spanErrorPassword.innerHTML = null;
 
 			const payload = {
 				"method": "login",
@@ -301,6 +309,10 @@ function main() {
 		lblUsername.innerText = "Username";
 		lblUsername.htmlFor = "inputUsername";
 		divRegister.appendChild(lblUsername);
+		const spanErrorUsername = document.createElement("span");
+		spanErrorUsername.id = "spanErrorUsername";
+		spanErrorUsername.className = "spanError";
+		divRegister.appendChild(spanErrorUsername);
 
 		divRegister.appendChild(document.createElement("br"));
 
@@ -325,6 +337,10 @@ function main() {
 		inputEmail.type = "email";
 		inputEmail.placeholder = "Email";
 		divRegister.appendChild(inputEmail);
+		const spanErrorEmail = document.createElement("span");
+		spanErrorEmail.id = "spanErrorEmail";
+		spanErrorEmail.className = "spanError";
+		divRegister.appendChild(spanErrorEmail);
 
 		divRegister.appendChild(document.createElement("br"));
 		divRegister.appendChild(document.createElement("br"));
@@ -341,6 +357,30 @@ function main() {
 		inputPassword.type = "password";
 		inputPassword.placeholder = "Password";
 		divRegister.appendChild(inputPassword);
+		const spanErrorPassword = document.createElement("span");
+		spanErrorPassword.id = "spanErrorPassword";
+		spanErrorPassword.className = "spanError";
+		divRegister.appendChild(spanErrorPassword);
+
+		divRegister.appendChild(document.createElement("br"));
+		divRegister.appendChild(document.createElement("br"));
+
+		const lblConfirmPassword = document.createElement("label");
+		lblConfirmPassword.innerText = "Confirm Password";
+		lblConfirmPassword.htmlFor = "inputConfirmPassword";
+		divRegister.appendChild(lblConfirmPassword);
+
+		divRegister.appendChild(document.createElement("br"));
+
+		const inputConfirmPassword = document.createElement("input");
+		inputConfirmPassword.id = "inputConfirmPassword";
+		inputConfirmPassword.type = "password";
+		inputConfirmPassword.placeholder = "Confirm Password";
+		divRegister.appendChild(inputConfirmPassword);
+		const spanErrorConfirmPassword = document.createElement("span");
+		spanErrorConfirmPassword.id = "spanErrorConfirmPassword";
+		spanErrorConfirmPassword.className = "spanError";
+		divRegister.appendChild(spanErrorConfirmPassword);
 
 		divRegister.appendChild(document.createElement("br"));
 		divRegister.appendChild(document.createElement("br"));
@@ -354,12 +394,15 @@ function main() {
 			const inputEmail = document.getElementById("inputEmail");
 			const inputPassword = document.getElementById("inputPassword");
 
-			if (!inputUsername.value) return inputUsername.style.backgroundColor = "red";
-			else inputUsername.style.backgroundColor = "white";
-			if (!inputEmail.value) return inputEmail.style.backgroundColor = "red";
-			else inputEmail.style.backgroundColor = "white";
-			if (!inputPassword.value) return inputPassword.style.backgroundColor = "red";
-			else inputPassword.style.backgroundColor = "white";
+			if (!inputUsername.value) return spanErrorUsername.innerHTML = "Username missing";
+			else spanErrorUsername.innerHTML = null;
+			if (!inputEmail.value) return spanErrorEmail.innerHTML = "Email missing";
+			else spanErrorEmail.innerHTML = null;
+			if (!inputPassword.value) return spanErrorPassword.innerHTML = "Password missing";
+			else spanErrorPassword.innerHTML = null;
+			if (!inputConfirmPassword.value) return spanErrorConfirmPassword.innerHTML = "Confirmation password missing";
+			else if (inputConfirmPassword.value !== inputPassword.value) return spanErrorConfirmPassword.innerHTML = "Passwords don't match";
+			else spanErrorConfirmPassword.innerHTML = null;
 
 			const payload = {
 				"method": "register",
@@ -383,6 +426,32 @@ function main() {
 		divRegister.appendChild(spanLogin);
 	}
 
+	function drawProfile(_className, _userId, _username, _email, _tries, _color) {
+		const spanProfile = document.createElement("span");
+		spanProfile.className = `spanProfile ${_className}`;
+		spanProfile.addEventListener("click", () => {
+			const payload = {
+				"method": "getProfile",
+				"userId": _userId
+			};
+
+			ws.send(JSON.stringify(payload));
+		});
+		const imgPicture = document.createElement("img");
+		imgPicture.className = `imgPicture ${_className}`;
+		imgPicture.src = `https://gravatar.com/avatar/${_email}?d=identicon`;
+		imgPicture.style.borderColor = _color;
+		spanProfile.appendChild(imgPicture);
+		const pUsername = document.createElement("p");
+		pUsername.className = `pUsername ${_className}`;
+		pUsername.style.color = _color;
+		if (_tries !== null) pUsername.innerHTML = `<b>${_username}</b>\n(${_tries})`;
+		else pUsername.innerHTML = `<b>${_username}</b>`;
+		spanProfile.appendChild(pUsername);
+
+		return spanProfile;
+	}
+
 	function showMainMenuLayout() {
 		clearScreen();
 
@@ -390,25 +459,7 @@ function main() {
 		divMainMenu.id = "divMainMenu";
 		document.getElementById("screen").appendChild(divMainMenu);
 
-		const spanProfile = document.createElement("span");
-		spanProfile.id = "spanProfile";
-		spanProfile.addEventListener("click", () => {
-			const payload = {
-				"method": "getProfile",
-				"username": pUsername.textContent
-			};
-
-			ws.send(JSON.stringify(payload));
-		});
-		const imgPicture = document.createElement("img");
-		imgPicture.id = "imgPicture";
-		imgPicture.src = `https://gravatar.com/avatar/${thisConnection.email}?d=identicon`;
-		spanProfile.appendChild(imgPicture);
-		const pUsername = document.createElement("p");
-		pUsername.id = "pUsername";
-		pUsername.textContent = thisConnection.username;
-		spanProfile.appendChild(pUsername);
-		divMainMenu.appendChild(spanProfile);
+		divMainMenu.appendChild(drawProfile("menu", thisConnection.userId, thisConnection.username, thisConnection.email, null, null));
 
 		const btnNewGame = document.createElement("button");
 		btnNewGame.id = "btnNewGame";
@@ -654,7 +705,6 @@ function main() {
 			const spanError = document.createElement("span");
 			spanError.id = `spanError${i}`;
 			spanError.className = "spanError";
-			spanError.style.color = "red";
 			divItem.appendChild(spanError);
 
 			divItem.appendChild(document.createElement("br"));
@@ -678,7 +728,7 @@ function main() {
 			let i = 0;
 
 			for (const error of errors) {
-				error.innerHTML = "";
+				error.innerHTML = null;
 			}
 
 			for (const item of items) {
@@ -843,6 +893,10 @@ function main() {
 		inputNewPassword.type = "password";
 		inputNewPassword.placeholder = "New Password";
 		divChangePassword.appendChild(inputNewPassword);
+		const spanErrorPassword = document.createElement("span");
+		spanErrorPassword.id = "spanErrorPassword";
+		spanErrorPassword.className = "spanError";
+		divChangePassword.appendChild(spanErrorPassword);
 
 		divChangePassword.appendChild(document.createElement("br"));
 		divChangePassword.appendChild(document.createElement("br"));
@@ -851,6 +905,10 @@ function main() {
 		lblConfirmPassword.innerText = "Confirm Password";
 		lblConfirmPassword.htmlFor = "inputConfirmPassword";
 		divChangePassword.appendChild(lblConfirmPassword);
+		const spanErrorConfirmPassword = document.createElement("span");
+		spanErrorConfirmPassword.id = "spanErrorConfirmPassword";
+		spanErrorConfirmPassword.className = "spanError";
+		divChangePassword.appendChild(spanErrorConfirmPassword);
 
 		divChangePassword.appendChild(document.createElement("br"));
 
@@ -871,10 +929,11 @@ function main() {
 			const inputNewPassword = document.getElementById("inputNewPassword");
 			const inputConfirmPassword = document.getElementById("inputConfirmPassword");
 
-			if (!inputNewPassword.value) return inputNewPassword.style.backgroundColor = "red";
-			else inputNewPassword.style.backgroundColor = "white";
-			if (!inputConfirmPassword.value || inputConfirmPassword.value !== inputNewPassword.value) return inputConfirmPassword.style.backgroundColor = "red";
-			else inputConfirmPassword.style.backgroundColor = "white";
+			if (!inputNewPassword.value) return spanErrorPassword.innerHTML = "Password missing";
+			else spanErrorPassword.innerHTML = null;
+			if (!inputConfirmPassword.value) return spanErrorConfirmPassword.innerHTML = "Confirmation password missing";
+			else if (inputConfirmPassword.value !== inputNewPassword.value) return spanErrorConfirmPassword.innerHTML = "Passwords don't match";
+			else spanErrorConfirmPassword.innerHTML = null;
 
 			const payload = {
 				"method": "changePassword",
@@ -965,7 +1024,7 @@ function main() {
 				};
 
 				ws.send(JSON.stringify(payload));
-				inputMessage.value = "";
+				inputMessage.value = null;
 			}
 		});
 		divChat.appendChild(inputMessage);
@@ -1043,7 +1102,7 @@ function main() {
 		inputGuess.addEventListener("keydown", event => {
 			if (inputGuess.value && event.key === "Enter") {
 				guess(inputGuess.value);
-				inputGuess.value = "";
+				inputGuess.value = null;
 			}
 		});
 		divGuess.appendChild(inputGuess);
@@ -1053,7 +1112,7 @@ function main() {
 		btnGuess.textContent = "Guess";
 		btnGuess.addEventListener("click", () => {
 			guess(inputGuess.value);
-			inputGuess.value = "";
+			inputGuess.value = null;
 		});
 		divGuess.appendChild(btnGuess);
 		divGame.appendChild(divGuess);
@@ -1142,58 +1201,111 @@ function main() {
 
 			divLeaderboard.appendChild(divUser);
 
-			if (divLeaderboardLayout.lastElementChild !== divUser) divLeaderboard.appendChild(document.createElement("br"));
+			if (divLeaderboard.lastElementChild !== divUser) divLeaderboard.appendChild(document.createElement("br"));
 		}
 	}
 
-	function getProfileInfo(_data) {
+	function getProfileInfo(_userInfo, _matchHistory) {
+		const username = _userInfo.username;
+		const profileModalHeader = document.getElementById("profileModalHeader");
+		const hModalTitle = document.createElement("h5");
+		hModalTitle.className = "modal-title";
+		if (thisConnection.username === _userInfo.username) hModalTitle.innerHTML = "Your Profile";
+		else hModalTitle.innerHTML = `${username}'s Profile`;
+		profileModalHeader.appendChild(hModalTitle);
+		const btnClose = document.createElement("button");
+		btnClose.type = "button";
+		btnClose.className = "btn-close";
+		btnClose.setAttribute("data-bs-dismiss", "modal");
+		btnClose.setAttribute("aria-label", "Close");
+		profileModalHeader.appendChild(btnClose);
+
 		const profileModalBody = document.getElementById("profileModalBody");
 
 		const html = document.createElement("div");
-		const spanProfile = document.createElement("span");
-		spanProfile.id = "spanProfileModal";
-		const imgPicture = document.createElement("img");
-		imgPicture.id = "imgPicture";
-		imgPicture.src = `https://gravatar.com/avatar/${_data.email}?d=identicon`;
-		spanProfile.appendChild(imgPicture);
-		const pUsername = document.createElement("p");
-		pUsername.id = "pUsername";
-		pUsername.innerHTML = _data.username;
-		spanProfile.appendChild(pUsername);
-		html.appendChild(spanProfile);
-
+		const divStats = document.createElement("div");
+		divStats.className = "divStats";
 		const spanWins = document.createElement("span");
 		spanWins.className = "spanWins";
-		spanWins.innerHTML = `<b>Wins:</b> ${_data.wins}`;
-		html.appendChild(spanWins);
-
-		html.appendChild(document.createElement("br"));
+		spanWins.innerHTML = `<b>Wins:</b> ${_userInfo.wins}`;
+		divStats.appendChild(spanWins);
 
 		const spanLosses = document.createElement("span");
 		spanLosses.className = "spanLosses";
-		spanLosses.innerHTML = `<b>Losses:</b> ${_data.losses}`;
-		html.appendChild(spanLosses);
-
-		html.appendChild(document.createElement("br"));
+		spanLosses.innerHTML = `<b>Losses:</b> ${_userInfo.losses}`;
+		divStats.appendChild(spanLosses);
 
 		const spanNMatches = document.createElement("span");
 		spanNMatches.className = "spanNMatches";
-		spanNMatches.innerHTML = `<b>Total:</b> ${_data.total}`;
-		html.appendChild(spanNMatches);
-
-		html.appendChild(document.createElement("br"));
+		spanNMatches.innerHTML = `<b>Total:</b> ${_userInfo.total}`;
+		divStats.appendChild(spanNMatches);
 
 		const spanWinRate = document.createElement("span");
 		spanWinRate.className = "spanWinRate";
-		spanWinRate.innerHTML = `<b>Win Rate:</b> ${_data.win_rate}%`;
-		html.appendChild(spanWinRate);
-
-		html.appendChild(document.createElement("br"));
+		spanWinRate.innerHTML = `<b>Win Rate:</b> ${_userInfo.win_rate}%`;
+		divStats.appendChild(spanWinRate);
 
 		const spanPoints = document.createElement("span");
 		spanPoints.className = "spanPoints";
-		spanPoints.innerHTML = `<b>Points:</b> ${_data.points}`;
-		html.appendChild(spanPoints);
+		spanPoints.innerHTML = `<b>Points:</b> ${_userInfo.points}`;
+		divStats.appendChild(spanPoints);
+		html.appendChild(divStats);
+
+		html.appendChild(document.createElement("br"));
+		html.appendChild(document.createElement("br"));
+
+		const matchHistoryTitle = document.createElement("h4");
+		matchHistoryTitle.id = "matchHistoryTitle";
+		matchHistoryTitle.textContent = "Last 20 Matches";
+		html.appendChild(matchHistoryTitle);
+
+		html.appendChild(document.createElement("br"));
+
+		const divMatchHistory = document.createElement("div");
+		divMatchHistory.id = "divMatchHistory";
+		html.appendChild(divMatchHistory);
+
+		for (let match of _matchHistory) {
+			const player1Id = match.player1_id;
+			const player2Id = match.player2_id;
+			const player1Username = match.player1_username;
+			const player2Username = match.player2_username;
+			const divMatch = document.createElement("div");
+			divMatch.className = "divMatch";
+
+			const divPlayersMatch = document.createElement("div");
+			divPlayersMatch.className = "divPlayersMatch";
+			let color = "red";
+			if (player1Id === match.winner_id) color = "green";
+			divPlayersMatch.appendChild(drawProfile("match", player1Id, player1Username, match.player1_email, match.player1_tries, color));
+			const spanVS = document.createElement("span");
+			spanVS.className = "vs";
+			spanVS.innerHTML = "VS";
+			spanVS.style.margin = "0 10px 0 10px";
+			divPlayersMatch.appendChild(spanVS);
+			if (player2Id === match.winner_id) color = "green";
+			divPlayersMatch.appendChild(drawProfile("match", player2Id, player2Username, match.player2_email, match.player2_tries, color));
+			divMatch.appendChild(divPlayersMatch);
+
+			const spanCategory = document.createElement("span");
+			spanCategory.className = "spanCategory";
+			spanCategory.innerHTML = `<b>Category:</b> ${match.category_name}`;
+			divMatch.appendChild(spanCategory);
+
+			const spanDuration = document.createElement("span");
+			spanDuration.className = "spanDuration";
+			spanDuration.innerHTML = `<b>Duration:</b> ${new Date(match.duration).toLocaleTimeString(navigator.language, { minute: "2-digit", second: "2-digit" })}`;
+			divMatch.appendChild(spanDuration);
+
+			const spanDateTime = document.createElement("span");
+			spanDateTime.className = "spanDateTime";
+			spanDateTime.innerHTML = new Date(match.created_at).toLocaleDateString(navigator.language, { day: "numeric", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+			divMatch.appendChild(spanDateTime);
+
+			divMatchHistory.appendChild(divMatch);
+
+			if (html.lastElementChild !== divMatch) divMatchHistory.appendChild(document.createElement("br"));
+		}
 
 		profileModalBody.innerHTML = html.innerHTML;
 		// eslint-disable-next-line no-undef
@@ -1223,7 +1335,7 @@ function main() {
 
 	function updatePlayers(_arrayPlayers) {
 		const divPlayers = document.getElementById("divPlayers");
-		divPlayers.innerHTML = "";
+		divPlayers.innerHTML = null;
 
 		let i = 0;
 
@@ -1236,7 +1348,7 @@ function main() {
 			spanPlayer.addEventListener("click", () => {
 				const payload = {
 					"method": "getProfile",
-					"username": player.username
+					"userId": player.id
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -1264,13 +1376,25 @@ function main() {
 	}
 
 	function clearScreen() {
-		document.getElementById("screen").innerHTML = "";
+		document.getElementById("screen").innerHTML = null;
 	}
 
-	function notify(_header, _message, _redirect) {
+	function notify(_title, _message, _redirect) {
 		document.getElementById("notificationModalBody").innerHTML = _message;
-		
-		if (_header) document.getElementById("notificationModalHeader").innerHTML = `<h4>${_header}</h4>`;
+
+		if (_title) {
+			const header = document.getElementById("notificationModalHeader");
+			const hModalTitle = document.createElement("h5");
+			hModalTitle.className = "modal-title";
+			hModalTitle.innerHTML = _title;
+			header.appendChild(hModalTitle);
+			const btnClose = document.createElement("button");
+			btnClose.type = "button";
+			btnClose.className = "btn-close";
+			btnClose.setAttribute("data-bs-dismiss", "modal");
+			btnClose.setAttribute("aria-label", "Close");
+			header.appendChild(btnClose);
+		}
 		if (_redirect) document.getElementById("notificationModalButton").addEventListener("click", () => window.location.replace(domainURL));
 
 		// eslint-disable-next-line no-undef
