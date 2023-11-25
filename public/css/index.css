@@ -26,10 +26,15 @@ button {
 
 table,
 td {
+
 	padding: 5px;
 	text-align: center;
 	border: 1px solid black;
 	border-collapse: collapse;
+}
+
+td:hover {
+	cursor: pointer;
 }
 
 #inputJoinGame, #selCategoryList, #inputTries, #inputName, #cbPublic {
@@ -111,7 +116,6 @@ td {
 }
 
 .spanProfile {
-	cursor: pointer;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -121,11 +125,26 @@ td {
 
 .divStats {
 	display: flex;
+	flex-direction: row;
+	width: 100%;
+}
+
+
+.divPictureModal {
+	display: flex;
 	flex-direction: column;
+	align-items: center;
+	width: 100%;
 }
 
 .imgPicture {
 	border-radius: 50%;
+}
+
+.imgPictureModal {
+	border-radius: 50%;
+	border: 3px solid;
+	width: 100px;
 }
 
 .imgPicture.menu {
@@ -206,11 +225,11 @@ td {
 }
 
 .clickable {
-	color: grey;
+	color: black;
 }
 
 .clickable:hover {
-	color: black;
+	color: grey;
 	cursor: pointer;
 }
 

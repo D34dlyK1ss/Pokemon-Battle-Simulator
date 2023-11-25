@@ -429,25 +429,40 @@ function main() {
 	function drawProfile(_className, _userId, _username, _email, _tries, _color) {
 		const spanProfile = document.createElement("span");
 		spanProfile.className = `spanProfile ${_className}`;
-		spanProfile.addEventListener("click", () => {
-			const payload = {
-				"method": "getProfile",
-				"userId": _userId
-			};
 
-			ws.send(JSON.stringify(payload));
-		});
+		const divPicture = document.createElement("div");
+		divPicture.className = "divPicture";
 		const imgPicture = document.createElement("img");
 		imgPicture.className = `imgPicture ${_className}`;
 		imgPicture.src = `https://gravatar.com/avatar/${_email}?d=identicon`;
 		imgPicture.style.borderColor = _color;
-		spanProfile.appendChild(imgPicture);
+		divPicture.appendChild(imgPicture);
+		spanProfile.appendChild(divPicture);
+
 		const pUsername = document.createElement("p");
-		pUsername.className = `pUsername ${_className}`;
 		pUsername.style.color = _color;
+		pUsername.className = `pUsername ${_className}`;
+
 		if (_tries !== null) pUsername.innerHTML = `<b>${_username}</b>\n(${_tries})`;
 		else pUsername.innerHTML = `<b>${_username}</b>`;
 		spanProfile.appendChild(pUsername);
+
+		if (_className === "menu") {
+			imgPicture.style.cursor = "pointer";
+			imgPicture.addEventListener("click", () => {
+				window.open("https://gravatar.com/", "_blank");
+			});
+
+			pUsername.className += " clickable";
+			pUsername.addEventListener("click", () => {
+				const payload = {
+					"method": "getProfile",
+					"userId": _userId
+				};
+	
+				ws.send(JSON.stringify(payload));
+			});
+		}
 
 		return spanProfile;
 	}
@@ -1067,20 +1082,19 @@ function main() {
 
 				td.appendChild(document.createElement("br"));
 
-				const btnCell = document.createElement("button");
-				btnCell.style.color = "limegreen";
-				btnCell.textContent = item.name;
-				btnCell.addEventListener("click", () => {
-					if (btnCell.style.color === "limegreen") {
-						btnCell.style.color = "red";
+				const spanName = document.createElement("span");
+				spanName.textContent = item.name;
+				td.addEventListener("click", () => {
+					if (spanName.style.color === "black") {
+						spanName.style.color = "grey";
 						imgCell.style.filter = "grayscale()";
 					}
 					else {
-						btnCell.style.color = "limegreen";
+						spanName.style.color = "black";
 						imgCell.style.filter = null;
 					}
 				});
-				td.appendChild(btnCell);
+				td.appendChild(spanName);
 				tr.appendChild(td);
 			}
 
@@ -1206,8 +1220,13 @@ function main() {
 	}
 
 	function getProfileInfo(_userInfo, _matchHistory) {
-		const username = _userInfo.username;
 		const profileModalHeader = document.getElementById("profileModalHeader");
+		const profileModalBody = document.getElementById("profileModalBody");
+
+		profileModalHeader.innerHTML = null;
+		profileModalBody.innerHTML = null;
+
+		const username = _userInfo.username;
 		const hModalTitle = document.createElement("h5");
 		hModalTitle.className = "modal-title";
 		if (thisConnection.username === _userInfo.username) hModalTitle.innerHTML = "Your Profile";
@@ -1220,9 +1239,16 @@ function main() {
 		btnClose.setAttribute("aria-label", "Close");
 		profileModalHeader.appendChild(btnClose);
 
-		const profileModalBody = document.getElementById("profileModalBody");
-
 		const html = document.createElement("div");
+
+		const divPictureModal = document.createElement("div");
+		divPictureModal.className = "divPictureModal";
+		const imgPictureModal = document.createElement("img");
+		imgPictureModal.className = "imgPictureModal";
+		imgPictureModal.src = `https://gravatar.com/avatar/${_userInfo.email}?d=identicon`;
+		divPictureModal.appendChild(imgPictureModal);
+		html.appendChild(divPictureModal);
+
 		const divStats = document.createElement("div");
 		divStats.className = "divStats";
 		const spanWins = document.createElement("span");
@@ -1275,8 +1301,9 @@ function main() {
 
 			const divPlayersMatch = document.createElement("div");
 			divPlayersMatch.className = "divPlayersMatch";
-			let color = "red";
+			let color;
 			if (player1Id === match.winner_id) color = "green";
+			else color = "red";
 			divPlayersMatch.appendChild(drawProfile("match", player1Id, player1Username, match.player1_email, match.player1_tries, color));
 			const spanVS = document.createElement("span");
 			spanVS.className = "vs";
@@ -1284,6 +1311,7 @@ function main() {
 			spanVS.style.margin = "0 10px 0 10px";
 			divPlayersMatch.appendChild(spanVS);
 			if (player2Id === match.winner_id) color = "green";
+			else color = "red";
 			divPlayersMatch.appendChild(drawProfile("match", player2Id, player2Username, match.player2_email, match.player2_tries, color));
 			divMatch.appendChild(divPlayersMatch);
 
@@ -1380,10 +1408,12 @@ function main() {
 	}
 
 	function notify(_title, _message, _redirect) {
+		const header = document.getElementById("notificationModalHeader");
+
+		header.innerHTML = null;
 		document.getElementById("notificationModalBody").innerHTML = _message;
 
 		if (_title) {
-			const header = document.getElementById("notificationModalHeader");
 			const hModalTitle = document.createElement("h5");
 			hModalTitle.className = "modal-title";
 			hModalTitle.innerHTML = _title;

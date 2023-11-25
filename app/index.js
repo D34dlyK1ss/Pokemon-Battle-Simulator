@@ -616,7 +616,7 @@ wss.on("connection", ws => {
 					const userInfo = res[0];
 
 					db.query(
-						`SELECT gm.*, c.name AS category_name, u1.username AS player1_username, u1.email AS player1_email, u2.username AS player2_username, u2.email AS player2_email FROM game_match gm JOIN category c ON gm.category_id = c.id JOIN user u1 ON gm.player1_id = u1.id JOIN user u2 ON gm.player2_id = u2.id WHERE player1_id=${userId} OR player2_id=${userId}`,
+						`SELECT gm.*, c.name AS category_name, u1.username AS player1_username, u1.email AS player1_email, u2.username AS player2_username, u2.email AS player2_email FROM game_match gm JOIN category c ON gm.category_id = c.id JOIN user u1 ON gm.player1_id = u1.id JOIN user u2 ON gm.player2_id = u2.id WHERE player1_id=${userId} OR player2_id=${userId} ORDER BY created_at DESC`,
 						(err, res) => {
 							if (err) console.error(err);
 							payload = {
@@ -735,20 +735,25 @@ function removePlayerFromGame(_gameId, _leavingPlayer) {
 		let payload = {};
 
 		for (const player of lobbies[_gameId].players) {
-			payload = {
-				"method": "updatePlayers",
-				"players": lobbies[_gameId].players
-			};
+			try {
+				payload = {
+					"method": "updatePlayers",
+					"players": lobbies[_gameId].players
+				};
 
-			activeConnections.get(player.connectionId).send(JSON.stringify(payload));
+				activeConnections.get(player.connectionId).send(JSON.stringify(payload));
 
-			payload = {
-				"method": "updateChat",
-				"type": "system",
-				"text": `<b>${_leavingPlayer}</b> left`
-			};
-
-			activeConnections.get(player.connectionId).send(JSON.stringify(payload));
+				payload = {
+					"method": "updateChat",
+					"type": "system",
+					"text": `<b>${_leavingPlayer}</b> left`
+				};
+	
+				activeConnections.get(player.connectionId).send(JSON.stringify(payload));
+			}
+			catch (err) {
+				console.error(err);
+			}
 		}
 	}
 }
