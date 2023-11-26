@@ -1084,6 +1084,7 @@ function main() {
 
 				const spanName = document.createElement("span");
 				spanName.textContent = item.name;
+				spanName.style.color = "black";
 				td.addEventListener("click", () => {
 					if (spanName.style.color === "black") {
 						spanName.style.color = "grey";
