@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@1,300&family=Oswald:wght@300&family=Playpen+Sans:wght@500&family=Raleway:wght@500&family=Roboto:wght@300&display=swap');
+
 * {
     text-decoration: none;
     margin: 0;
@@ -12,6 +14,11 @@ body, html {
     width: 100%;
     height: 100%;
     border: none;
+}
+
+#title > h1 {
+	font-family: 'Playpen Sans', cursive;
+	font-size: 6vh;
 }
 
 body {
@@ -59,13 +66,12 @@ td:hover {
 }
 
 #screen {
-	width: 75rem;
-	height: 45rem;
+	width: 80%;
+	height: 60%;
 	padding: 2rem;
 	background-color: white;
 	box-shadow: -2px 2px 4px 0 rgba(0, 0, 0, 0.3);
 	border-radius: 10px;
-	display: flex;
 }
 
 #divLeaderboard {
@@ -241,4 +247,56 @@ td:hover {
 	width: 64px;
 	height: 64px;
 	object-fit: cover;
+}
+
+#divLogin, #divRegister, #divAccountRecovery{
+	text-align: center;
+	margin: auto;
+}
+
+
+#loginUser > input, #loginPass > input, #registerUser > input, #registerEmail > input, #registerPW > input, #registerConfirmPW > input, #recoveryEmail > input{
+	margin-bottom: 2%;
+	width: 50%;
+	height: auto;
+    margin: 0 auto;
+    padding: 10px;
+    position: relative;
+}
+
+#loginUser > label, #loginPass > label, #registerUser > label, #registerEmail > label, #registerPW > label, #registerConfirmPW > label, #recoveryEmail > label{
+	margin-bottom: 2%;
+	margin-top: 2%;
+}
+
+#loginButton, #btnRegister, #btnSend{
+	margin-top: 2%;
+}
+
+
+
+@media only screen and (max-width: 600px){
+	#title > h1 {
+		font-size: 5vh;
+	}
+}
+
+@media only screen and (max-width: 425px){
+	#title > h1 {
+		font-size: 4vh;
+	}
+
+	#loginUser > input, #loginPass > input, #registerUser > input, #registerEmail > input, #registerPW > input, #registerConfirmPW > input{
+		width: 100%;
+	}
+
+	#btnRegister, #btnLogin{
+		width: 50%;
+	}
+
+	#screen {
+		width: 300px;
+		height: 500px;
+	}
+
 }

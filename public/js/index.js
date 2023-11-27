@@ -203,56 +203,63 @@ function main() {
 
 	function showLoginLayout() {
 		clearScreen();
-
 		const divLogin = document.createElement("div");
 		divLogin.id = "divLogin";
+		divLogin.className = "row justify-content-md";
 		document.getElementById("screen").appendChild(divLogin);
+
+		const divLoginUser = document.createElement("div");
+		divLoginUser.id = "loginUser";
+		divLoginUser.className = "col-12";
+		document.getElementById("divLogin").appendChild(divLoginUser);
 
 		const lblUsername = document.createElement("label");
 		lblUsername.innerText = "Username / Email";
 		lblUsername.htmlFor = "inputUsername";
-		divLogin.appendChild(lblUsername);
-
-		divLogin.appendChild(document.createElement("br"));
+		divLoginUser.appendChild(lblUsername);
 
 		const inputUsername = document.createElement("input");
 		inputUsername.id = "inputUsername";
 		inputUsername.type = "text";
+		inputUsername.className = "form-control";
 		inputUsername.placeholder = "Username / Email";
 		inputUsername.addEventListener("keydown", event => {
 			if (event.key === "Enter") document.getElementById("btnLogin").click();
 		});
-		divLogin.appendChild(inputUsername);
+		divLoginUser.appendChild(inputUsername);
 		const spanErrorUsername = document.createElement("span");
 		spanErrorUsername.id = "spanErrorUsername";
 		spanErrorUsername.className = "spanError";
-		divLogin.appendChild(spanErrorUsername);
+		divLoginUser.appendChild(spanErrorUsername);
 
-		divLogin.appendChild(document.createElement("br"));
-		divLogin.appendChild(document.createElement("br"));
+		const divLoginPass = document.createElement("div");
+		divLoginPass.id = "loginPass";
+		divLoginPass.className = "col-12";
+		document.getElementById("divLogin").appendChild(divLoginPass);
 
 		const lblPassword = document.createElement("label");
 		lblPassword.innerText = "Password";
 		lblPassword.htmlFor = "inputPassword";
-		divLogin.appendChild(lblPassword);
-
-		divLogin.appendChild(document.createElement("br"));
+		divLoginPass.appendChild(lblPassword);
 
 		const inputPassword = document.createElement("input");
 		inputPassword.id = "inputPassword";
+		inputPassword.className = "form-control";
 		inputPassword.type = "password";
 		inputPassword.placeholder = "Password";
 		inputPassword.addEventListener("keydown", event => {
 			if (event.key === "Enter") document.getElementById("btnLogin").click();
 		});
-		divLogin.appendChild(inputPassword);
+		divLoginPass.appendChild(inputPassword);
 		const spanErrorPassword = document.createElement("span");
 		spanErrorPassword.id = "spanErrorPassword";
 		spanErrorPassword.className = "spanError";
-		divLogin.appendChild(spanErrorPassword);
+		divLoginPass.appendChild(spanErrorPassword);
 
-		divLogin.appendChild(document.createElement("br"));
-		divLogin.appendChild(document.createElement("br"));
+		const divLoginButton = document.createElement("div");
+		divLoginButton.className = "col-12";
+		divLoginButton.id = "loginButton";
+		divLogin.appendChild(divLoginButton);
 
 		const btnLogin = document.createElement("button");
 		btnLogin.id = "btnLogin";
@@ -275,9 +282,11 @@ function main() {
 
 			ws.send(JSON.stringify(payload));
 		});
-		divLogin.appendChild(btnLogin);
+		divLoginButton.appendChild(btnLogin);
 
-		divLogin.appendChild(document.createElement("br"));
+		const spansDiv = document.createElement("div")
+		spansDiv.className = "col-12";
+		divLogin.appendChild(spansDiv);
 
 		const aRecover = document.createElement("span");
 		aRecover.className = "clickable";
@@ -285,9 +294,9 @@ function main() {
 		aRecover.addEventListener("click", () => {
 			showAccountRecoveryLayout();
 		});
-		divLogin.appendChild(aRecover);
+		spansDiv.appendChild(aRecover);
 
-		divLogin.appendChild(document.createElement("br"));
+		spansDiv.appendChild(document.createElement("br"));
 
 		const spanRegister = document.createElement("span");
 		spanRegister.className = "clickable";
@@ -295,7 +304,7 @@ function main() {
 		spanRegister.addEventListener("click", () => {
 			showRegisterLayout();
 		});
-		divLogin.appendChild(spanRegister);
+		spansDiv.appendChild(spanRegister);
 	}
 
 	function showRegisterLayout() {
@@ -303,87 +312,96 @@ function main() {
 
 		const divRegister = document.createElement("div");
 		divRegister.id = "divRegister";
+		divRegister.className = "row justify-content-md";
 		document.getElementById("screen").appendChild(divRegister);
+
+		const divRegisterUser = document.createElement("div");
+		divRegisterUser.id = "registerUser";
+		divRegisterUser.className = "col-12";
+		document.getElementById("divRegister").appendChild(divRegisterUser);
 
 		const lblUsername = document.createElement("label");
 		lblUsername.innerText = "Username";
 		lblUsername.htmlFor = "inputUsername";
-		divRegister.appendChild(lblUsername);
+		divRegisterUser.appendChild(lblUsername);
 		const spanErrorUsername = document.createElement("span");
 		spanErrorUsername.id = "spanErrorUsername";
 		spanErrorUsername.className = "spanError";
-		divRegister.appendChild(spanErrorUsername);
-
-		divRegister.appendChild(document.createElement("br"));
+		divRegisterUser.appendChild(spanErrorUsername);
 
 		const inputUsername = document.createElement("input");
 		inputUsername.id = "inputUsername";
+		inputUsername.className = "form-control";
 		inputUsername.type = "text";
 		inputUsername.placeholder = "Username";
-		divRegister.appendChild(inputUsername);
+		divRegisterUser.appendChild(inputUsername);
 
-		divRegister.appendChild(document.createElement("br"));
-		divRegister.appendChild(document.createElement("br"));
+		const divRegisterEmail = document.createElement("div");
+		divRegisterEmail.id = "registerEmail";
+		divRegisterEmail.className = "col-12";
+		document.getElementById("divRegister").appendChild(divRegisterEmail);
 
 		const lblEmail = document.createElement("label");
 		lblEmail.innerText = "Email";
 		lblEmail.htmlFor = "inputEmail";
-		divRegister.appendChild(lblEmail);
-
-		divRegister.appendChild(document.createElement("br"));
+		divRegisterEmail.appendChild(lblEmail);
 
 		const inputEmail = document.createElement("input");
 		inputEmail.id = "inputEmail";
+		inputEmail.className = "form-control";
 		inputEmail.type = "email";
 		inputEmail.placeholder = "Email";
-		divRegister.appendChild(inputEmail);
+		divRegisterEmail.appendChild(inputEmail);
 		const spanErrorEmail = document.createElement("span");
 		spanErrorEmail.id = "spanErrorEmail";
 		spanErrorEmail.className = "spanError";
-		divRegister.appendChild(spanErrorEmail);
+		divRegisterEmail.appendChild(spanErrorEmail);
 
-		divRegister.appendChild(document.createElement("br"));
-		divRegister.appendChild(document.createElement("br"));
+		const divRegisterPW = document.createElement("div");
+		divRegisterPW.id = "registerUser";
+		divRegisterPW.className = "col-12";
+		document.getElementById("divRegister").appendChild(divRegisterPW);
 
 		const lblPassword = document.createElement("label");
 		lblPassword.innerText = "Password";
 		lblPassword.htmlFor = "inputPassword";
-		divRegister.appendChild(lblPassword);
-
-		divRegister.appendChild(document.createElement("br"));
+		divRegisterPW.appendChild(lblPassword);
 
 		const inputPassword = document.createElement("input");
 		inputPassword.id = "inputPassword";
+		inputPassword.className = "form-control";
 		inputPassword.type = "password";
 		inputPassword.placeholder = "Password";
-		divRegister.appendChild(inputPassword);
+		divRegisterPW.appendChild(inputPassword);
 		const spanErrorPassword = document.createElement("span");
 		spanErrorPassword.id = "spanErrorPassword";
 		spanErrorPassword.className = "spanError";
-		divRegister.appendChild(spanErrorPassword);
+		divRegisterPW.appendChild(spanErrorPassword);
 
-		divRegister.appendChild(document.createElement("br"));
-		divRegister.appendChild(document.createElement("br"));
+		const divRegisterConfirmPW = document.createElement("div");
+		divRegisterConfirmPW.id = "registerUser";
+		divRegisterConfirmPW.className = "col-12";
+		document.getElementById("divRegister").appendChild(divRegisterConfirmPW);
 
 		const lblConfirmPassword = document.createElement("label");
 		lblConfirmPassword.innerText = "Confirm Password";
 		lblConfirmPassword.htmlFor = "inputConfirmPassword";
-		divRegister.appendChild(lblConfirmPassword);
-
-		divRegister.appendChild(document.createElement("br"));
+		divRegisterConfirmPW.appendChild(lblConfirmPassword);
 
 		const inputConfirmPassword = document.createElement("input");
 		inputConfirmPassword.id = "inputConfirmPassword";
+		inputConfirmPassword.className = "form-control";
 		inputConfirmPassword.type = "password";
 		inputConfirmPassword.placeholder = "Confirm Password";
-		divRegister.appendChild(inputConfirmPassword);
+		divRegisterConfirmPW.appendChild(inputConfirmPassword);
 		const spanErrorConfirmPassword = document.createElement("span");
 		spanErrorConfirmPassword.id = "spanErrorConfirmPassword";
 		spanErrorConfirmPassword.className = "spanError";
-		divRegister.appendChild(spanErrorConfirmPassword);
+		divRegisterConfirmPW.appendChild(spanErrorConfirmPassword);
 
-		divRegister.appendChild(document.createElement("br"));
-		divRegister.appendChild(document.createElement("br"));
+		const registerButton = document.createElement("div");
+		registerButton.className = "col-12";
+		document.getElementById("divRegister").appendChild(registerButton);
 
 		const btnRegister = document.createElement("button");
 		btnRegister.id = "btnRegister";
@@ -413,9 +431,7 @@ function main() {
 
 			ws.send(JSON.stringify(payload));
 		});
-		divRegister.appendChild(btnRegister);
-
-		divRegister.appendChild(document.createElement("br"));
+		registerButton.appendChild(btnRegister);
 
 		const spanLogin = document.createElement("span");
 		spanLogin.className = "clickable";
@@ -828,27 +844,34 @@ function main() {
 
 		const divAccountRecovery = document.createElement("div");
 		divAccountRecovery.id = "divAccountRecovery";
+		divAccountRecovery.className = "row justify-content-md";
 		document.getElementById("screen").appendChild(divAccountRecovery);
+
+		const accountRecoveryEmail = document.createElement("div");
+		accountRecoveryEmail.id = "recoveryEmail";
+		accountRecoveryEmail.className = "col-12";
+		divAccountRecovery.appendChild(accountRecoveryEmail);
 
 		const lblEmail = document.createElement("label");
 		lblEmail.innerText = "Please insert your email below.";
 		lblEmail.htmlFor = "inputEmail";
-		divAccountRecovery.appendChild(lblEmail);
+		accountRecoveryEmail.appendChild(lblEmail);
 
-		divAccountRecovery.appendChild(document.createElement("br"));
-		divAccountRecovery.appendChild(document.createElement("br"));
 
 		const inputEmail = document.createElement("input");
 		inputEmail.id = "inputEmail";
 		inputEmail.type = "email";
+		inputEmail.className = "form-control";
 		inputEmail.placeholder = "Email";
 		inputEmail.addEventListener("keydown", event => {
 			if (event.key === "Enter") document.getElementById("btnSend").click();
 		});
-		divAccountRecovery.appendChild(inputEmail);
+		accountRecoveryEmail.appendChild(inputEmail);
 
-		divAccountRecovery.appendChild(document.createElement("br"));
-		divAccountRecovery.appendChild(document.createElement("br"));
+		const accountRecoveryButton = document.createElement("div");
+		accountRecoveryButton.id = "recoveryButton";
+		accountRecoveryButton.className = "col-12";
+		divAccountRecovery.appendChild(accountRecoveryButton);
 
 		const btnSend = document.createElement("button");
 		btnSend.id = "btnSend";
@@ -866,9 +889,12 @@ function main() {
 				notify("Success", "If the email is registered, an account recovery email will be sent.");
 			}
 		});
-		divAccountRecovery.appendChild(btnSend);
+		accountRecoveryButton.appendChild(btnSend);
 
-		divAccountRecovery.appendChild(document.createElement("br"));
+		const accountRecoverySpans = document.createElement("div");
+		accountRecoverySpans.id = "recoverySpans"
+		accountRecoverySpans.className = "col-12";
+		divAccountRecovery.appendChild(accountRecoverySpans);
 
 		const spanLogin = document.createElement("span");
 		spanLogin.className = "clickable";
@@ -876,9 +902,9 @@ function main() {
 		spanLogin.addEventListener("click", () => {
 			showLoginLayout();
 		});
-		divAccountRecovery.appendChild(spanLogin);
+		accountRecoverySpans.appendChild(spanLogin);
 
-		divAccountRecovery.appendChild(document.createElement("br"));
+		accountRecoverySpans.appendChild(document.createElement("br"));
 
 		const spanRegister = document.createElement("span");
 		spanRegister.className = "clickable";
@@ -886,7 +912,7 @@ function main() {
 		spanRegister.addEventListener("click", () => {
 			showRegisterLayout();
 		});
-		divAccountRecovery.appendChild(spanRegister);
+		accountRecoverySpans.appendChild(spanRegister);
 	}
 
 	function showNewPasswordLayout(_recoveryCode) {
