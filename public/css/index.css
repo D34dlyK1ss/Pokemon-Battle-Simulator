@@ -112,6 +112,7 @@ td:hover {
 	border: 1px solid black;
 	overflow: auto;
 	scroll-behavior: smooth;
+	height: 132px;
 }
 
 #divItems {
@@ -139,6 +140,11 @@ td:hover {
 	color: black;
 	font-family: "Open-Sans", sans-serif;
 	font-size: 1.3em;
+}
+
+#btnLeaderboard:hover, #btnCategoryEditor:hover, #btnNewGame:hover, #btnJoinGame:hover, #btnLogout:hover{
+	transition: "color 1.5s ease";
+	color: grey;
 }
 
 

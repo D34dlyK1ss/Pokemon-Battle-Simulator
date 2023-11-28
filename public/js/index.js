@@ -1051,7 +1051,7 @@ function main() {
 		divLobby.appendChild(btnLeave);
 
 		const divPlayers = document.createElement("div");
-		divPlayers.className = "col-8";
+		divPlayers.className = "col-4";
 		divPlayers.id = "divPlayers";
 		divLobby.appendChild(divPlayers);
 
@@ -1064,12 +1064,13 @@ function main() {
 		divChat.appendChild(chatTitle);
 		const divChatHistory = document.createElement("div");
 		divChatHistory.id = "divChatHistory";
-		divChatHistory.className = "col-8";
+		divChatHistory.className = "col-4";
 		divChat.appendChild(divChatHistory);
 		const inputMessage = document.createElement("input");
 		inputMessage.id = "inputMessage";
-		inputMessage.className = "col-8"
+		inputMessage.className = "col-4";
 		inputMessage.placeholder = "Chat here";
+		inputMessage.maxLength = 100;
 
 		inputMessage.addEventListener("keydown", event => {
 			if (inputMessage.value && event.key === "Enter") {
@@ -1239,7 +1240,7 @@ function main() {
 
 		for (let user of _data) {
 			const userRow = document.createElement("tr");
-			leaderboardTable.appendChild(userRow)
+			leaderboardTable.appendChild(userRow);
 
 			const tableName = document.createElement("td");
 			tableName.className = "tableName";
