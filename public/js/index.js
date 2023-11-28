@@ -288,7 +288,7 @@ function main() {
 		});
 		divLoginButton.appendChild(btnLogin);
 
-		const spansDiv = document.createElement("div")
+		const spansDiv = document.createElement("div");
 		spansDiv.className = "col-12";
 		divLogin.appendChild(spansDiv);
 
@@ -904,7 +904,7 @@ function main() {
 		accountRecoveryButton.appendChild(btnSend);
 
 		const accountRecoverySpans = document.createElement("div");
-		accountRecoverySpans.id = "recoverySpans"
+		accountRecoverySpans.id = "recoverySpans";
 		accountRecoverySpans.className = "col-12";
 		divAccountRecovery.appendChild(accountRecoverySpans);
 

@@ -6,6 +6,9 @@
   "type": "module",
   "author": "João Martins & Rodrigo Silva",
   "license": "ISC",
+  "scripts": {
+    "start": "node ."
+  },
   "dependencies": {
     "bootstrap": "^5.3.2",
     "dotenv": "^16.3.1",
