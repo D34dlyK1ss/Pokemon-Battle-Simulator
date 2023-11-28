@@ -66,19 +66,23 @@ td:hover {
 }
 
 #screen {
-	width: 80%;
-	height: 60%;
+	width: 90%;
+	height: 75%;
 	padding: 2rem;
 	background-color: white;
 	box-shadow: -2px 2px 4px 0 rgba(0, 0, 0, 0.3);
 	border-radius: 10px;
+	margin-inline: auto;
 }
 
 #divLeaderboard {
-	width: fit-content;
-	height: 36rem;
+	height: 34rem;
 	overflow: auto;
 	scroll-behavior: smooth;
+}
+
+#divLeaderboard > table > tr > td {
+	font-size: 2svh;
 }
 
 #divMatchHistory {
@@ -95,26 +99,23 @@ td:hover {
 
 #divPlayers {
 	font-size: large;
-	height: 50px;
-	width: 260px;
 	border: 1px solid black;
+}
+
+#divPlayers > .player {
+	font-size: 2svh;
 }
 
 #divChatHistory {
 	border: 1px solid black;
-	height: 130px;
-	width: 260px;
 	overflow: auto;
 	scroll-behavior: smooth;
-}
-
-#inputMessage {
-	width: 254px;
 }
 
 #divItems {
 	display: grid;
 	grid-template-columns: repeat(6, 1fr);
+	overflow: auto;
 }
 
 #divItems .item {
@@ -129,11 +130,27 @@ td:hover {
 	block-size: fit-content;
 }
 
+
+#btnLeaderboard, #btnCategoryEditor, #btnNewGame, #btnJoinGame, #btnLogout{
+	background-color: white;
+	border: none;
+	color: black;
+	font-family: "Open-Sans", sans-serif;
+	font-size: 1.3em;
+}
+
+
 .divStats {
 	display: flex;
 	flex-direction: row;
 	width: 100%;
 }
+
+.divStats > span{
+	margin-right: 2%;
+}
+
+
 
 
 .divPictureModal {
@@ -141,6 +158,7 @@ td:hover {
 	flex-direction: column;
 	align-items: center;
 	width: 100%;
+	margin-bottom: 2%;
 }
 
 .imgPicture {
@@ -199,7 +217,6 @@ td:hover {
 	display: flex;
 	align-items: center;
 	border: 1px solid black;
-	width: 47rem;
 }
 
 .divLeaderboardUser {
@@ -244,14 +261,18 @@ td:hover {
 }
 
 .picture {
-	width: 64px;
-	height: 64px;
+	width: 36px;
+	height: 36px;
 	object-fit: cover;
 }
 
 #divLogin, #divRegister, #divAccountRecovery{
 	text-align: center;
 	margin: auto;
+}
+
+#divRegister > h1, #divLogin > h1, #divAccountRecovery > h1{
+	font-family: "Roboto", sans-serif;
 }
 
 
@@ -273,17 +294,44 @@ td:hover {
 	margin-top: 2%;
 }
 
+#btnStart, #btnLeave, #btnGuess {
+	margin-bottom: 2%;
+	border-radius: 20px;
+}
+
+
+table {
+	table-layout: fixed;
+	width: 100%;
+	pointer-events: none;
+}
+
+
 
 
 @media only screen and (max-width: 600px){
 	#title > h1 {
 		font-size: 5vh;
 	}
+
+	#divLobby{
+		margin-bottom: 2%;
+	}
+
+	.characterName{
+		font-size: 1.2svh;
+	}
+
+	#divPlayers > .player {
+		font-size: 1.5svh;
+	}
+
 }
+
 
 @media only screen and (max-width: 425px){
 	#title > h1 {
-		font-size: 4vh;
+		font-size: 3svh;
 	}
 
 	#loginUser > input, #loginPass > input, #registerUser > input, #registerEmail > input, #registerPW > input, #registerConfirmPW > input{
@@ -291,12 +339,34 @@ td:hover {
 	}
 
 	#btnRegister, #btnLogin{
-		width: 50%;
+		width: 10svh;
 	}
 
+}
+
+@media only screen and (max-width: 470px){
 	#screen {
-		width: 300px;
-		height: 500px;
+		width: 402px;
+		height: 722px;
+
 	}
 
+	#divLobby{
+		width: 337px;
+		height: 307px;
+	}
+
+	#divGame{
+		width: 337px;
+		height: 449px;
+	}
+}
+
+@media only screen and (width < 768px){
+	#divLeaderboard > table > tr > td {
+		font-size: 1.2svh;
+	}
+	#divLeaderboard > table > tr > th {
+		font-size: 1.3svh;
+	}
 }

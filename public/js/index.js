@@ -208,6 +208,10 @@ function main() {
 		divLogin.className = "row justify-content-md";
 		document.getElementById("screen").appendChild(divLogin);
 
+		const loginText = document.createElement("h1");
+		loginText.innerText = "Login";
+		divLogin.appendChild(loginText);
+
 		const divLoginUser = document.createElement("div");
 		divLoginUser.id = "loginUser";
 		divLoginUser.className = "col-12";
@@ -314,6 +318,10 @@ function main() {
 		divRegister.id = "divRegister";
 		divRegister.className = "row justify-content-md";
 		document.getElementById("screen").appendChild(divRegister);
+
+		const registerText = document.createElement("h1");
+		registerText.innerText = "Create your account";
+		divRegister.appendChild(registerText);
 
 		const divRegisterUser = document.createElement("div");
 		divRegisterUser.id = "registerUser";
@@ -847,6 +855,10 @@ function main() {
 		divAccountRecovery.className = "row justify-content-md";
 		document.getElementById("screen").appendChild(divAccountRecovery);
 
+		const recoveryText = document.createElement("h1");
+		recoveryText.innerText = "Recover your account";
+		divAccountRecovery.appendChild(recoveryText);
+
 		const accountRecoveryEmail = document.createElement("div");
 		accountRecoveryEmail.id = "recoveryEmail";
 		accountRecoveryEmail.className = "col-12";
@@ -1003,6 +1015,7 @@ function main() {
 
 		const divLobby = document.createElement("div");
 		divLobby.id = "divLobby";
+		divLobby.className = "col-xl";
 		document.getElementById("screen").appendChild(divLobby);
 
 		const divRoomCode = document.createElement("div");
@@ -1038,6 +1051,7 @@ function main() {
 		divLobby.appendChild(btnLeave);
 
 		const divPlayers = document.createElement("div");
+		divPlayers.className = "col-8";
 		divPlayers.id = "divPlayers";
 		divLobby.appendChild(divPlayers);
 
@@ -1045,14 +1059,16 @@ function main() {
 
 		const divChat = document.createElement("div");
 		divChat.id = "divChat";
-		const chatTitle = document.createElement("h4");
+		const chatTitle = document.createElement("h5");
 		chatTitle.innerHTML = "CHAT";
 		divChat.appendChild(chatTitle);
 		const divChatHistory = document.createElement("div");
 		divChatHistory.id = "divChatHistory";
+		divChatHistory.className = "col-8";
 		divChat.appendChild(divChatHistory);
 		const inputMessage = document.createElement("input");
 		inputMessage.id = "inputMessage";
+		inputMessage.className = "col-8"
 		inputMessage.placeholder = "Chat here";
 
 		inputMessage.addEventListener("keydown", event => {
@@ -1090,6 +1106,7 @@ function main() {
 
 		const divGame = document.createElement("div");
 		divGame.id = "divGame";
+		divGame.className = "col-xl";
 		document.getElementById("screen").appendChild(divGame);
 
 		const tableBoard = document.createElement("table");
@@ -1109,6 +1126,7 @@ function main() {
 				td.appendChild(document.createElement("br"));
 
 				const spanName = document.createElement("span");
+				spanName.className = "characterName";
 				spanName.textContent = item.name;
 				spanName.style.color = "black";
 				td.addEventListener("click", () => {
@@ -1132,7 +1150,8 @@ function main() {
 
 		const yourItem = document.createElement("p");
 		yourItem.id = "pYourItem";
-		yourItem.innerText = _yourItem;
+		yourItem.style = "margin-top: 2%;";
+		yourItem.innerText = "Your character is " + _yourItem;
 		divGame.appendChild(yourItem);
 
 		const divGuess = document.createElement("div");
@@ -1206,43 +1225,54 @@ function main() {
 		divLeaderboard.id = "divLeaderboard";
 		divLeaderboardLayout.appendChild(divLeaderboard);
 
+		const leaderboardTable = document.createElement("table");
+		leaderboardTable.classList.add("table");
+		divLeaderboard.appendChild(leaderboardTable);
+		const leaderboardTableHead = document.createElement("tr");
+		leaderboardTable.appendChild(leaderboardTableHead);
+		leaderboardTableHead.appendChild(Object.assign(document.createElement("th"), {className: "col", innerText: "User"}));
+		leaderboardTableHead.appendChild(Object.assign(document.createElement("th"), {className: "col", innerText: "Wins"}));
+		leaderboardTableHead.appendChild(Object.assign(document.createElement("th"), {className: "col", innerText: "Losses"}));
+		leaderboardTableHead.appendChild(Object.assign(document.createElement("th"), {className: "col", innerText: "Matches"}));
+		leaderboardTableHead.appendChild(Object.assign(document.createElement("th"), {className: "col", innerText: "Win Rate"}));
+		leaderboardTableHead.appendChild(Object.assign(document.createElement("th"), {className: "col", innerText: "Points"}));
+
 		for (let user of _data) {
-			const divUser = document.createElement("div");
-			divUser.className = "divLeaderboardUser";
+			const userRow = document.createElement("tr");
+			leaderboardTable.appendChild(userRow)
 
-			const spanUsername = document.createElement("span");
-			spanUsername.className = "spanUsername";
-			spanUsername.innerHTML = `<b>${user.username}</b>`;
-			divUser.appendChild(spanUsername);
+			const tableName = document.createElement("td");
+			tableName.className = "tableName";
+			tableName.innerText = `${user.username}`;
+			userRow.appendChild(tableName);
 
-			const spanWins = document.createElement("span");
+			const spanWins = document.createElement("td");
 			spanWins.className = "spanWins";
-			spanWins.innerHTML = `<b>Wins:</b> ${user.wins}`;
-			divUser.appendChild(spanWins);
+			spanWins.innerText = `${user.wins}`;
+			userRow.appendChild(spanWins);
 
-			const spanLosses = document.createElement("span");
+			const spanLosses = document.createElement("td");
 			spanLosses.className = "spanLosses";
-			spanLosses.innerHTML = `<b>Losses:</b> ${user.losses}`;
-			divUser.appendChild(spanLosses);
+			spanLosses.innerText = `${user.losses}`;
+			userRow.appendChild(spanLosses);
 
-			const spanNMatches = document.createElement("span");
+			const spanNMatches = document.createElement("td");
 			spanNMatches.className = "spanNMatches";
-			spanNMatches.innerHTML = `<b>Total:</b> ${user.total}`;
-			divUser.appendChild(spanNMatches);
+			spanNMatches.innerText = `${user.total}`;
+			userRow.appendChild(spanNMatches);
 
-			const spanWinRate = document.createElement("span");
+			const spanWinRate = document.createElement("td");
 			spanWinRate.className = "spanWinRate";
-			spanWinRate.innerHTML = `<b>Win Rate:</b> ${user.win_rate}%`;
-			divUser.appendChild(spanWinRate);
+			spanWinRate.innerText = `${user.win_rate}%`;
+			userRow.appendChild(spanWinRate);
 
-			const spanPoints = document.createElement("span");
+			const spanPoints = document.createElement("td");
 			spanPoints.className = "spanPoints";
-			spanPoints.innerHTML = `<b>Points:</b> ${user.points}`;
-			divUser.appendChild(spanPoints);
+			spanPoints.innerText = `${user.points}`;
+			userRow.appendChild(spanPoints);
 
-			divLeaderboard.appendChild(divUser);
+			leaderboardTable.appendChild(userRow);
 
-			if (divLeaderboard.lastElementChild !== divUser) divLeaderboard.appendChild(document.createElement("br"));
 		}
 	}
 
@@ -1305,7 +1335,6 @@ function main() {
 		html.appendChild(divStats);
 
 		html.appendChild(document.createElement("br"));
-		html.appendChild(document.createElement("br"));
 
 		const matchHistoryTitle = document.createElement("h4");
 		matchHistoryTitle.id = "matchHistoryTitle";
@@ -1316,6 +1345,7 @@ function main() {
 
 		const divMatchHistory = document.createElement("div");
 		divMatchHistory.id = "divMatchHistory";
+		divMatchHistory.className = "row";
 		html.appendChild(divMatchHistory);
 
 		for (let match of _matchHistory) {
