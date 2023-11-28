@@ -79,11 +79,13 @@ td:hover {
 	height: 34rem;
 	overflow: auto;
 	scroll-behavior: smooth;
+	pointer-events: none;
 }
 
 #divLeaderboard > table > tr > td {
 	font-size: 2svh;
 }
+
 
 #divMatchHistory {
 	width: fit-content;
@@ -303,8 +305,9 @@ td:hover {
 table {
 	table-layout: fixed;
 	width: 100%;
-	pointer-events: none;
 }
+
+
 
 
 
