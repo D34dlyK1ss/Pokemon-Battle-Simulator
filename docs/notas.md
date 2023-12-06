@@ -4,7 +4,7 @@
 
 - ~~Exposição do perfil (nome, foto, histórico de partidas, número de vitórias, número de derrotas, total de jogos, percentagem de vitória)~~
 
-- Histórico com informação das partidas (data e hora, duração, vencedor, categoria)
+- ~~Histórico com informação das partidas (data e hora, duração, vencedor, categoria)~~
 
 - ~~Tabela de classificação~~
 
