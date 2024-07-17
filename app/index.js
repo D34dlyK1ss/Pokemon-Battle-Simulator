@@ -13,7 +13,7 @@ const app = express();
 const clientPort = parseInt(process.env.CLIENT_PORT);
 app.use(express.static("public"));
 app.get("/", (req, res) => res.sendFile("index.html"));
-app.listen(clientPort);
+app.listen(clientPort, "26.35.146.0",() => console.log(`Server running on port ${clientPort}`));
 
 const key = readFileSync("key.pem");
 const cert = readFileSync("cert.pem");

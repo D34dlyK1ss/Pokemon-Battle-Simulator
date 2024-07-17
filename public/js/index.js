@@ -1,6 +1,6 @@
 function main() {
-	const ws = new WebSocket("wss://localhost:8443");
-	const domainURL = "https://localhost:8443";
+	const ws = new WebSocket("wss://26.35.146.0:8443");
+	const domainURL = "https://26.35.146.0:8443";
 	let thisConnection = null;
 	let gameId = null;
 
