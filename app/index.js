@@ -51,7 +51,7 @@ const transporter = nodemailer.createTransport({
 	}
 });
 
-const domainURL = `https://192.168.1.11:${serverPort}`;
+const domainURL = `https://26.35.146.0:${serverPort}`;
 const activeConnections = new Map();	// key: connection ID, value: ws
 const accountsToRecover = new Map();	// key: recovery code, value: email
 const accountsToVerify = new Map();		// key: verification code, value: email
