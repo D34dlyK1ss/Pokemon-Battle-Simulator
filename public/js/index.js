@@ -225,12 +225,12 @@ function main() {
 		const inputUsername = document.createElement("input");
 		inputUsername.id = "inputUsername";
 		inputUsername.type = "text";
-		inputUsername.className = "form-control";
 		inputUsername.placeholder = "Username / Email";
 		inputUsername.addEventListener("keydown", event => {
 			if (event.key === "Enter") document.getElementById("btnLogin").click();
 		});
 		divLoginUser.appendChild(inputUsername);
+
 		const spanErrorUsername = document.createElement("span");
 		spanErrorUsername.id = "spanErrorUsername";
 		spanErrorUsername.className = "spanError";
@@ -248,7 +248,6 @@ function main() {
 
 		const inputPassword = document.createElement("input");
 		inputPassword.id = "inputPassword";
-		inputPassword.className = "form-control";
 		inputPassword.type = "password";
 		inputPassword.placeholder = "Password";
 		inputPassword.addEventListener("keydown", event => {
@@ -273,11 +272,12 @@ function main() {
 			const inputUsername = document.getElementById("inputUsername");
 			const inputPassword = document.getElementById("inputPassword");
 
-			if (!inputUsername.value) return spanErrorUsername.innerHTML = "Username missing";
+			if (!inputUsername.value) spanErrorUsername.innerHTML = "Username missing";
 			else spanErrorUsername.innerHTML = null;
-			if (!inputPassword.value) return spanErrorPassword.innerHTML = "Password missing";
+			if (!inputPassword.value) spanErrorPassword.innerHTML = "Password missing";
 			else spanErrorPassword.innerHTML = null;
 
+			if (!spanErrorUsername.innerHTML && !spanErrorPassword.innerHTML) {
 			const payload = {
 				"method": "login",
 				"username": inputUsername.value,
@@ -285,6 +285,7 @@ function main() {
 			};
 
 			ws.send(JSON.stringify(payload));
+			}
 		});
 		divLoginButton.appendChild(btnLogin);
 
@@ -332,17 +333,17 @@ function main() {
 		lblUsername.innerText = "Username";
 		lblUsername.htmlFor = "inputUsername";
 		divRegisterUser.appendChild(lblUsername);
+
+		const inputUsername = document.createElement("input");
+		inputUsername.id = "inputUsername";
+		inputUsername.type = "text";
+		inputUsername.placeholder = "Username";
+		divRegisterUser.appendChild(inputUsername);
+
 		const spanErrorUsername = document.createElement("span");
 		spanErrorUsername.id = "spanErrorUsername";
 		spanErrorUsername.className = "spanError";
 		divRegisterUser.appendChild(spanErrorUsername);
-
-		const inputUsername = document.createElement("input");
-		inputUsername.id = "inputUsername";
-		inputUsername.className = "form-control";
-		inputUsername.type = "text";
-		inputUsername.placeholder = "Username";
-		divRegisterUser.appendChild(inputUsername);
 
 		const divRegisterEmail = document.createElement("div");
 		divRegisterEmail.id = "registerEmail";
@@ -356,7 +357,6 @@ function main() {
 
 		const inputEmail = document.createElement("input");
 		inputEmail.id = "inputEmail";
-		inputEmail.className = "form-control";
 		inputEmail.type = "email";
 		inputEmail.placeholder = "Email";
 		divRegisterEmail.appendChild(inputEmail);
@@ -366,7 +366,7 @@ function main() {
 		divRegisterEmail.appendChild(spanErrorEmail);
 
 		const divRegisterPW = document.createElement("div");
-		divRegisterPW.id = "registerUser";
+		divRegisterPW.id = "registerPW";
 		divRegisterPW.className = "col-12";
 		document.getElementById("divRegister").appendChild(divRegisterPW);
 
@@ -377,7 +377,6 @@ function main() {
 
 		const inputPassword = document.createElement("input");
 		inputPassword.id = "inputPassword";
-		inputPassword.className = "form-control";
 		inputPassword.type = "password";
 		inputPassword.placeholder = "Password";
 		divRegisterPW.appendChild(inputPassword);
@@ -387,7 +386,7 @@ function main() {
 		divRegisterPW.appendChild(spanErrorPassword);
 
 		const divRegisterConfirmPW = document.createElement("div");
-		divRegisterConfirmPW.id = "registerUser";
+		divRegisterConfirmPW.id = "registerConfirmPW";
 		divRegisterConfirmPW.className = "col-12";
 		document.getElementById("divRegister").appendChild(divRegisterConfirmPW);
 
@@ -398,7 +397,6 @@ function main() {
 
 		const inputConfirmPassword = document.createElement("input");
 		inputConfirmPassword.id = "inputConfirmPassword";
-		inputConfirmPassword.className = "form-control";
 		inputConfirmPassword.type = "password";
 		inputConfirmPassword.placeholder = "Confirm Password";
 		divRegisterConfirmPW.appendChild(inputConfirmPassword);
@@ -420,16 +418,22 @@ function main() {
 			const inputEmail = document.getElementById("inputEmail");
 			const inputPassword = document.getElementById("inputPassword");
 
-			if (!inputUsername.value) return spanErrorUsername.innerHTML = "Username missing";
+			if (!inputUsername.value) spanErrorUsername.innerHTML = "Username missing";
+			else if (inputUsername.value.length > 16) spanErrorUsername.innerHTML = "Username too long";
+			else if (inputUsername.value.length < 4) spanErrorUsername.innerHTML = "Username too short";
+			else if (/[^a-zA-Z0-9_-]/.test(profanityFilter(inputUsername.value))) spanErrorUsername.innerHTML = "Invalid Username";
 			else spanErrorUsername.innerHTML = null;
-			if (!inputEmail.value) return spanErrorEmail.innerHTML = "Email missing";
+			if (!inputEmail.value) spanErrorEmail.innerHTML = "Email missing";
+			else if (/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(inputEmail.value)) spanErrorEmail.innerHTML = "Invalid email";
 			else spanErrorEmail.innerHTML = null;
-			if (!inputPassword.value) return spanErrorPassword.innerHTML = "Password missing";
+			if (!inputPassword.value) spanErrorPassword.innerHTML = "Password missing";
+			else if (inputPassword.value.length < 8) spanErrorPassword.innerHTML = "Password too short";
 			else spanErrorPassword.innerHTML = null;
-			if (!inputConfirmPassword.value) return spanErrorConfirmPassword.innerHTML = "Confirmation password missing";
-			else if (inputConfirmPassword.value !== inputPassword.value) return spanErrorConfirmPassword.innerHTML = "Passwords don't match";
+			if (!inputConfirmPassword.value) spanErrorConfirmPassword.innerHTML = "Confirmation password missing";
+			else if (inputConfirmPassword.value !== inputPassword.value) spanErrorConfirmPassword.innerHTML = "Passwords don't match";
 			else spanErrorConfirmPassword.innerHTML = null;
 
+			if (!spanErrorUsername.innerHTML && !spanErrorEmail.innerHTML && !spanErrorPassword.innerHTML && !spanErrorConfirmPassword.innerHTML) {
 			const payload = {
 				"method": "register",
 				"username": inputUsername.value,
@@ -438,6 +442,7 @@ function main() {
 			};
 
 			ws.send(JSON.stringify(payload));
+			}
 		});
 		registerButton.appendChild(btnRegister);
 
@@ -873,7 +878,6 @@ function main() {
 		const inputEmail = document.createElement("input");
 		inputEmail.id = "inputEmail";
 		inputEmail.type = "email";
-		inputEmail.className = "form-control";
 		inputEmail.placeholder = "Email";
 		inputEmail.addEventListener("keydown", event => {
 			if (event.key === "Enter") document.getElementById("btnSend").click();
@@ -982,12 +986,13 @@ function main() {
 			const inputNewPassword = document.getElementById("inputNewPassword");
 			const inputConfirmPassword = document.getElementById("inputConfirmPassword");
 
-			if (!inputNewPassword.value) return spanErrorPassword.innerHTML = "Password missing";
+			if (!inputNewPassword.value) spanErrorPassword.innerHTML = "Password missing";
 			else spanErrorPassword.innerHTML = null;
-			if (!inputConfirmPassword.value) return spanErrorConfirmPassword.innerHTML = "Confirmation password missing";
-			else if (inputConfirmPassword.value !== inputNewPassword.value) return spanErrorConfirmPassword.innerHTML = "Passwords don't match";
+			if (!inputConfirmPassword.value) spanErrorConfirmPassword.innerHTML = "Confirmation password missing";
+			else if (inputConfirmPassword.value !== inputNewPassword.value) spanErrorConfirmPassword.innerHTML = "Passwords don't match";
 			else spanErrorConfirmPassword.innerHTML = null;
 
+			if (!spanErrorPassword.innerHTML && !spanErrorConfirmPassword.innerHTML) {
 			const payload = {
 				"method": "changePassword",
 				"recoveryCode": _recoveryCode,
@@ -995,6 +1000,7 @@ function main() {
 			};
 
 			ws.send(JSON.stringify(payload));
+			}
 		});
 		divChangePassword.appendChild(btnChangePassword);
 
@@ -1020,7 +1026,7 @@ function main() {
 
 		const divRoomCode = document.createElement("div");
 		divRoomCode.id = "divRoomCode";
-		divRoomCode.innerHTML = `<p id="pRoomCode"><b>Room code: </b>${gameId}</p>`;
+		divRoomCode.innerHTML = `<p id="pRoomCode"><b>Room code: </b>${_gameId}</p>`;
 		divLobby.appendChild(divRoomCode);
 
 		const btnStart = document.createElement("button");
@@ -1394,7 +1400,6 @@ function main() {
 		}
 
 		profileModalBody.innerHTML = html.innerHTML;
-		// eslint-disable-next-line no-undef
 		new bootstrap.Modal(document.getElementById("profileModal")).show();
 	}
 
@@ -1500,6 +1505,31 @@ function main() {
 			}
 		}
 	}
+
+	function profanityFilter(string) {
+		let sanitizedMessage = string;
+
+		for (const word of badWords) {
+			sanitizedMessage = sanitizedMessage.replace(/0|º/g, "o");
+			sanitizedMessage = sanitizedMessage.replace(/1|!/g, "i");
+			sanitizedMessage = sanitizedMessage.replace(/3|£|€|&/g, "e");
+			sanitizedMessage = sanitizedMessage.replace(/4|@|ª/g, "a");
+			sanitizedMessage = sanitizedMessage.replace(/5|\$|§/g, "s");
+			sanitizedMessage = sanitizedMessage.replace(/6|9/g, "g");
+			sanitizedMessage = sanitizedMessage.replace(/7|\+/g, "t");
+			sanitizedMessage = sanitizedMessage.replace(/8/g, "ate");
+
+			for (let i = 0; i <= sanitizedMessage.length - word.length; i++) {
+				const batch = sanitizedMessage.substr(i, word.length);
+
+				if (batch.toLowerCase() === word) string = string.slice(0, i) + "*".repeat(word.length) + string.slice(i + word.length);
+			}
+		}
+
+		return string;
+	}
+
+	badWords = ["anal", "anus", "arrse", "arse", "ass", "asses", "assfukka", "asshole", "assholes", "asswhole", "ballbag", "balls", "ballsack", "bastard", "beastial", "beastiality", "bellend", "bestial", "bestiality", "biatch", "bitch", "bitches", "bitchin", "bitching", "bloody", "blow job", "blowjob", "blowjobs", "boceta", "boiola", "boiolas", "bollock", "bollok", "boner", "boob", "boobs", "breasts", "bugger", "bum", "butt", "butthole", "carpet muncher", "cawk", "chink", "cipa", "clit", "clitoris", "clits", "cnut", "cock", "cockface", "cockhead", "cockmunch", "cocks", "cocksuck", "cocksuka", "cocksukka", "cok", "cokmuncher", "coksucka", "coon", "cox", "crap", "cum", "cumm", "cumming", "cummm", "cums", "cumshot", "cunilingus", "cunillingus", "cunnilingus", "cunt", "cuntlick", "cuntlicking", "cunts", "cyalis", "cyberfuc", "damn", "dick", "dildo", "dildos", "dink", "dinks", "dirsa", "doggin", "dogging", "donkeyribber", "doosh", "douche", "duche", "dyke", "ejaculate", "ejaculated", "ejaculates", "ejaculating", "ejaculatings", "ejaculation", "ejakulate", "fag", "fagging", "faggitt", "faggot", "faggs", "fagot", "fagots", "fags", "fanny", "fanyy", "fatass", "feck", "fecker", "felching", "fellate", "fellatio", "flange", "flap", "fook", "fuck", "fudge packer", "fudgepacker", "fuk", "fukk", "fukkin", "fukkk", "fuks", "fukwhit", "fukwit", "fux", "gangbang", "gangbanged", "gangbangs", "gaylord", "gaysex", "goatse", "God", "god-dam", "god-damned", "goddamn", "goddamned", "hardcoresex", "hell", "heshe", "hoar", "hoare", "hoer", "homo", "hore", "horniest", "horny", "hotsex", "jack-off", "jackoff", "jap", "jerk-off", "jism", "jiz", "jizm", "jizz", "kawk", "knob", "knobead", "knobed", "knobend", "knobhead", "knobjocky", "knobjokey", "kock", "kondum", "kondums", "kum", "kumm", "kumming", "kummm", "kums", "kunilingus", "labia", "masochist", "master-bate", "masterbate", "masterbation", "masturbate", "mo-fo", "mofo", "mothafuck", "mothafucka", "mothafuckas", "mothafuckaz", "mothafucked", "mothafuckin", "mothafucking", "mothafuckings", "mothafucks", "mother fuck", "motherfuck", "muff", "mutha", "muthafuckk", "muther", "mutherfuck", "nazi", "nigga", "niggah", "niggas", "niggaz", "nigger", "nob", "nob jokey", "nobhead", "nobjocky", "nobjokey", "numbnuts", "nutsack", "orgasim", "orgasims", "orgasm", "orgasms", "pawn", "pecker", "penis", "phonesex", "phuck", "phuk", "phuked", "phuking", "phukked", "phukking", "phuks", "phuq", "pimpis", "piss", "pissed", "pisses", "pissin", "pissing", "pissoff", "poop", "porn", "porno", "pornos", "prick", "pricks", "pube", "pusse", "pussi", "pussies", "pussy", "pussys", "rectum", "retard", "rimjaw", "rimming", "s.o.b.", "sadist", "schlong", "screwing", "scroat", "scrote", "scrotum", "semen", "sex", "shag", "shagger", "shaggin", "shagging", "shemale", "shit", "skank", "slut", "sluts", "smegma", "smut", "snatch", "son-of-a-bitch", "spac", "spunk", "teets", "teez", "testical", "testicle", "tit", "tits", "tittie", "titty", "tittywank", "titwank", "tosser", "turd", "twat", "twathead", "twatty", "twunt", "vagina", "viagra", "vulva", "wang", "wank", "wanky", "whoar", "whore", "willies", "willy", "xrated", "xxx", "2girls1cup", "arbeit macht frei", "ausschwitz", "buttfucker", "cock sucker", "cocksucker", "comepollas", "drecksjude", "endl sung", "falangista", "fils de pute", "gilipollas", "grosse", "hacer un dedo", "hacerse una paja", "hago una paja", "heil hitler", "hice un dedo", "ijosdeputa", "jilipollas", "judenmutter", "masturbaci", "masturbacion", "masturbarse", "me la pela", "me la suda", "merde", "mierdecilla", "motherfucker", "motherfucking", "pierdol", "pierdoli&h107", "pierdolona", "prostituir", "przejebane", "raecarruth", "rassenlehre", "reichskristall", "reisfresser", "rozpierdala", "rozpierdala&h107", "rozpierdolone", "rozpierdolony", "rucha&h107", "sackgesicht", "sado-masochistic", "sadomasochistic", "sadomasoquismo", "sadomasoquista", "samckdaddy", "sandnigger", "sauhund", "sausagejockey", "schlitzauge", "schutzstaffel", "schwuchtel", "shadybackroomdealings", "shadydealings", "shawtypimp", "sheep-l0ver", "sheep-l0vers", "sheep-lover", "sheep-lovers", "sheep-shaggers", "sheepl0ver", "sheepl0vers", "sheeplover", "sheepshaggers", "sheetheads", "shit4brains", "shitbagger", "shitbrains", "shitbreath", "shitfaced", "shitforbrains", "shitfucker", "shithapens", "shithappens", "shitings", "shitoutofluck", "shitspitter", "shitstabber", "shitstabbers", "sinnfein's", "slanderyou2.blogspot.com", "smackdaddy", "smackthemonkey", "snortingcoke", "sonofabitch", "sonofbitch", "soplapollas", "spunkbubble", "subnormales", "te faire enculer", "wyjeb&h107", "zajeba&h107"]
 }
 
 main();

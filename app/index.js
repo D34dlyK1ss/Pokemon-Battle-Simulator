@@ -5,32 +5,43 @@ import express from "express";
 import { WebSocketServer } from "ws";
 import mysql from "mysql2";
 import nodemailer from "nodemailer";
-import badWords from "./badWords.js";
 import { JSDOM } from "jsdom";
+import badWords from "./badWords.js";
+
 dotenv.config();
+const { CLIENT_PORT, SERVER_PORT, SESSION_SECRET, EMAIL, PASSWORD } = process.env;
 
 const app = express();
-const clientPort = parseInt(process.env.CLIENT_PORT);
 app.use(express.static("public"));
+app.use(express.json());
+
 app.get("/", (req, res) => res.sendFile("index.html"));
-app.listen(clientPort, "26.35.146.0",() => console.log(`Server running on port ${clientPort}`));
+const clientPort = parseInt(CLIENT_PORT);
+app.listen(clientPort, () => console.log(`Client listening to port ${clientPort}`));
 
-const key = readFileSync("key.pem");
-const cert = readFileSync("cert.pem");
-const options = { key: key, cert: cert };
-const server = https.createServer(options, app);
-server.on("error", (err) => console.error(err));
-server.listen(parseInt(process.env.SERVER_PORT));
 
-const wss = new WebSocketServer({ server: server });
+let key, cert;
+try {
+	key = readFileSync("key.pem");
+	cert = readFileSync("cert.pem");
+} catch (err) {
+	console.error("SSL certificates not found or invalid");
+	process.exit(1);
+}
+
+const server = https.createServer({ key, cert }, app);
+const serverPort = parseInt(SERVER_PORT);
+server.listen(serverPort, () => console.log(`Server listening to port ${serverPort}`));
+
+
 const db = mysql.createConnection({
 	host: "localhost",
 	user: "who_is_it_game",
 	database: "who_is_it"
 });
 
-const gameEmail = process.env.EMAIL;
-const gamePassword = process.env.PASSWORD;
+const gameEmail = EMAIL;
+const gamePassword = PASSWORD;
 const transporter = nodemailer.createTransport({
 	host: "smtp-mail.outlook.com",
 	port: 587,
@@ -40,13 +51,14 @@ const transporter = nodemailer.createTransport({
 	}
 });
 
-const domainURL = "https://localhost:8443";
+const domainURL = `https://192.168.1.11:${serverPort}`;
 const activeConnections = new Map();	// key: connection ID, value: ws
 const accountsToRecover = new Map();	// key: recovery code, value: email
 const accountsToVerify = new Map();		// key: verification code, value: email
 const usersInGame = new Map();			// key: user ID, value: game ID
 const lobbies = {};
 
+const wss = new WebSocketServer({ server: server });
 wss.on("connection", ws => {
 	const id = newId(32);
 
@@ -76,7 +88,7 @@ wss.on("connection", ws => {
 
 	ws.on("message", (message) => {
 		const result = JSON.parse(message);
-		const method = result.method;		// method is a property send by the client
+			const method = result.method;			// method is a property send by the client
 
 		// Client wants to login
 		if (method === "login") {
@@ -659,15 +671,13 @@ function newId(_length) {
 	return result;
 }
 
-function loginQuery(_ws, _username, _password) {
-	let payload = {};
-
+function loginQuery(_ws, _req, _username, _password) {
 	db.query(
 		`SELECT id, username, email FROM user WHERE (username = '${_username}' OR email = SHA2('${_username}', 256)) AND password = SHA2('${_password}', 256)`,
 		(err, res) => {
 			if (err) return console.error(err);
 			if (res.length === 0) {
-				payload = {
+				const payload = {
 					"method": "alert",
 					"error": true,
 					"header": "Error",
@@ -794,8 +804,8 @@ function saveResultsToDatabase(_game) {
 	);
 }
 
-function cleanMessage(_message) {
-	let sanitizedMessage = _message;
+function cleanMessage(_string) {
+	let sanitizedMessage = _string;
 
 	for (const word of badWords) {
 		sanitizedMessage = sanitizedMessage.replace(/0|º/g, "o");
@@ -810,11 +820,11 @@ function cleanMessage(_message) {
 		for (let i = 0; i <= sanitizedMessage.length - word.length; i++) {
 			const batch = sanitizedMessage.substr(i, word.length);
 
-			if (batch.toLowerCase() === word) _message = _message.slice(0, i) + "*".repeat(word.length) + _message.slice(i + word.length);
+			if (batch.toLowerCase() === word) _string = _string.slice(0, i) + "*".repeat(word.length) + _string.slice(i + word.length);
 		}
 	}
 
-	return _message;
+	return _string;
 }
 
 function dateTimeString() {
