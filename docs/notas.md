@@ -1,14 +1,10 @@
 # TO DO
 
-- ~~Conta de utilizador~~
+- Imagens maiores
 
-- ~~Exposição do perfil (nome, foto, histórico de partidas, número de vitórias, número de derrotas, total de jogos, percentagem de vitória)~~
+- Imagem do meu character
 
-- ~~Histórico com informação das partidas (data e hora, duração, vencedor, categoria)~~
-
-- ~~Tabela de classificação~~
-
-- ~~Categorias feitas por utilizadores públicas e privadas~~
+- Loja de categorias
 
 - Lista de seguimentos
 
