@@ -6,7 +6,7 @@ INSERT INTO category(name, type, items, isPublic) VALUES ('People', 'Default', '
 {"name": "Hans", "picture": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMkCAqo4cxpv4790jOodoQMMu2ojLhwuHTF591GA99bvXkH_PL76K6cYEa227DA9WnLkE"},
 {"name": "Peter", "picture": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSNdryfM0gfx4la0m2E6CA8B8z4Nmy-WhUjkRrpOpBMnTM0PbdvInTEIpDdv34oXdhFBJk"},
 {"name": "Anne", "picture": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT351pn4LPYk-W1yzpKMwMdahCksoI0CG8DJMIZWjbMJU5bk093fszyDlLGyc5YpNlxhDU"},
-{"name": "Joe", "picture": "https://media.discordapp.net/attachments/255707187052019712/1176137388318261258/FqAFM0AaAAA-2LP.jpg"},
+{"name": "Joe", "picture": "https://dynamicmedia.livenationinternational.com/o/v/v/7897490e-2cd3-44e0-b620-78878419a7fc.jpg"},
 {"name": "Daniel", "picture": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRahXXaYYbQUksozcnuMfetLT7NUZvDcMdv9cIyFc-XFPPX-Uicl1xfPwgqZnOXy3tvMn8"},
 {"name": "Sophie", "picture": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQFZhnQnRx2nEkQFjkohvzLx8bHMrwTelbYhhnRZVcJM0qoK8QwqKKJ4q9T97kMGiHuzKo"},
 {"name": "Michael", "picture": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQp4tYVQJyNaGWqgbJ99s_HOUzWEtyxGTIQ0O7vgS7_NOwzXS84jMWFN80LIMly4j9crvg"},
