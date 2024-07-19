@@ -671,7 +671,7 @@ function newId(_length) {
 	return result;
 }
 
-function loginQuery(_ws, _req, _username, _password) {
+function loginQuery(_ws, _username, _password) {
 	db.query(
 		`SELECT id, username, email FROM user WHERE (username = '${_username}' OR email = SHA2('${_username}', 256)) AND password = SHA2('${_password}', 256)`,
 		(err, res) => {
