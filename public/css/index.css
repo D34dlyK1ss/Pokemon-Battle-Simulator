@@ -6,25 +6,31 @@
     padding: 0;
     outline: none;
     line-height: 1;
+    -webkit-text-size-adjust: none;
+    -ms-text-size-adjust: none;
+    -moz-text-size-adjust: none;
     text-size-adjust: none;
     user-select: none;
+    box-sizing: border-box;
 }
 
 body, html {
     width: 100%;
     height: 100%;
     border: none;
+    font-family: 'Roboto', sans-serif;
 }
 
 #title > h1 {
-	font-family: 'Playpen Sans', cursive;
-	font-size: 6vh;
+    font-family: 'Playpen Sans', cursive;
+    font-size: 6vh;
 }
 
 body {
 	display: flex;
-	flex-direction: row;
-	background-color: cornflowerblue;
+	flex-direction: column;
+	background-color: #0099ff;
+	padding: 10px;
 }
 
 button {
@@ -33,11 +39,11 @@ button {
 
 table,
 td {
-
 	padding: 5px;
 	text-align: center;
 	border: 1px solid black;
 	border-collapse: collapse;
+	width: 100%;
 }
 
 td:hover {
@@ -45,11 +51,7 @@ td:hover {
 }
 
 #inputJoinGame, #selCategoryList, #inputTries, #inputName, #cbPublic {
-	margin-left: 3px;
-}
-
-#inputUsername, #inputEmail, #inputPassword, #inputNewPassword, #inputConfirmPassword {
-	margin-right: 5px;
+	max-width: fit-content;
 }
 
 #container {
@@ -63,33 +65,38 @@ td:hover {
 #title {
     align-items: flex-end;
 	color: white;
+	text-align: center;
+	margin-bottom: 1rem;
 }
 
 #screen {
-	width: 90%;
-	height: 75%;
-	padding: 2rem;
-	background-color: white;
-	box-shadow: -2px 2px 4px 0 rgba(0, 0, 0, 0.3);
-	border-radius: 10px;
-	margin-inline: auto;
+    width: 1280px;
+    height: 720px;
+    max-width: 90%;
+    max-height: 75%;
+    padding: 2rem;
+    background-color: white;
+    box-shadow: -2px 2px 4px 0 rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    margin-inline: auto;
+    overflow: auto;
 }
 
 #divLeaderboard {
-	height: 34rem;
+	max-height: 34rem;
 	overflow: auto;
 	scroll-behavior: smooth;
 	pointer-events: none;
 }
 
 #divLeaderboard > table > tr > td {
-	font-size: 2svh;
+	font-size: 2vh;
 }
 
-
 #divMatchHistory {
-	width: fit-content;
-	height: 30rem;
+	width: 100%;
+	max-width: 500px;
+	max-height: 30rem;
 	overflow: auto;
 	scroll-behavior: smooth;
 }
@@ -105,7 +112,7 @@ td:hover {
 }
 
 #divPlayers > .player {
-	font-size: 2svh;
+	font-size: 2vh;
 }
 
 #divChatHistory {
@@ -119,6 +126,7 @@ td:hover {
 	display: grid;
 	grid-template-columns: repeat(6, 1fr);
 	overflow: auto;
+	gap: 5px;
 }
 
 #divItems .item {
@@ -133,20 +141,18 @@ td:hover {
 	block-size: fit-content;
 }
 
-
-#btnLeaderboard, #btnCategoryEditor, #btnNewGame, #btnJoinGame, #btnLogout{
+#btnLeaderboard, #btnCategoryEditor, #btnNewGame, #btnJoinGame, #btnLogout {
 	background-color: white;
 	border: none;
 	color: black;
-	font-family: "Open-Sans", sans-serif;
+	font-family: "Open Sans", sans-serif;
 	font-size: 1.3em;
 }
 
-#btnLeaderboard:hover, #btnCategoryEditor:hover, #btnNewGame:hover, #btnJoinGame:hover, #btnLogout:hover{
-	transition: "color 1.5s ease";
+#btnLeaderboard:hover, #btnCategoryEditor:hover, #btnNewGame:hover, #btnJoinGame:hover, #btnLogout:hover {
+	transition: color 1.5s ease;
 	color: grey;
 }
-
 
 .divStats {
 	display: flex;
@@ -154,12 +160,9 @@ td:hover {
 	width: 100%;
 }
 
-.divStats > span{
+.divStats > span {
 	margin-right: 2%;
 }
-
-
-
 
 .divPictureModal {
 	display: flex;
@@ -245,9 +248,6 @@ td:hover {
 
 .chat.message {
 	white-space: pre-wrap;
-	white-space: -moz-pre-wrap;
-	white-space: -pre-wrap;
-	white-space: -o-pre-wrap;
 	word-wrap: break-word;
 }
 
@@ -274,108 +274,144 @@ td:hover {
 	object-fit: cover;
 }
 
-#divLogin, #divRegister, #divAccountRecovery{
+#divLogin, #divRegister, #divAccountRecovery {
 	text-align: center;
 	margin: auto;
+	width: 100%;
+	max-width: 500px;
 }
 
-#divRegister > h1, #divLogin > h1, #divAccountRecovery > h1{
+#divRegister > h1, #divLogin > h1, #divAccountRecovery > h1 {
 	font-family: "Roboto", sans-serif;
 }
 
-
-#loginUser > input, #loginPass > input, #registerUser > input, #registerEmail > input, #registerPW > input, #registerConfirmPW > input, #recoveryEmail > input{
+#loginUser > input, #loginPass > input, #registerUser > input, #registerEmail > input, #registerPW > input, #registerConfirmPW > input, #recoveryEmail > input {
 	margin-bottom: 2%;
-	width: 50%;
+	width: 100%;
 	height: auto;
-    margin: 0 auto;
-    padding: 10px;
-    position: relative;
+	padding: 10px;
 }
 
-#loginUser > label, #loginPass > label, #registerUser > label, #registerEmail > label, #registerPW > label, #registerConfirmPW > label, #recoveryEmail > label{
+#loginUser > label, #loginPass > label, #registerUser > label, #registerEmail > label, #registerPW > label, #registerConfirmPW > label, #recoveryEmail > label {
 	margin-bottom: 2%;
 	margin-top: 2%;
-}
-
-#loginButton, #btnRegister, #btnSend{
-	margin-top: 2%;
+	display: block;
+	text-align: left;
+	width: 100%;
 }
 
 #btnStart, #btnLeave, #btnGuess {
 	margin-bottom: 2%;
 	border-radius: 20px;
+	width: 100%;
+	padding: 10px;
 }
-
 
 table {
 	table-layout: fixed;
 	width: 100%;
 }
 
+@media only screen and (max-width: 768px) {
+    #title > h1 {
+        font-size: 5vh;
+    }
 
+    table,
+    td {
+        font-size: 1.8vh;
+        padding: 3px; /* Adjust padding for smaller cells */
+    }
 
+    #divPlayers > .player {
+        font-size: 1.8vh;
+    }
 
+    .pUsername.menu {
+        font-size: 18px;
+    }
 
+    .pUsername.match {
+        font-size: 14px;
+    }
 
-@media only screen and (max-width: 600px){
-	#title > h1 {
-		font-size: 5vh;
-	}
+    #btnLeaderboard,
+    #btnCategoryEditor,
+    #btnNewGame,
+    #btnJoinGame,
+    #btnLogout {
+        font-size: 1.2em;
+    }
 
-	#divLobby{
-		margin-bottom: 2%;
-	}
+    #divLeaderboard > table > tr > td {
+        font-size: 1.2vh;
+    }
 
-	.characterName{
-		font-size: 1.2svh;
-	}
-
-	#divPlayers > .player {
-		font-size: 1.5svh;
-	}
-
+    #divLeaderboard > table > tr > th {
+        font-size: 1.3vh;
+    }
 }
 
+@media only screen and (max-width: 600px) {
+    #title > h1 {
+        font-size: 5vh;
+    }
 
-@media only screen and (max-width: 425px){
-	#title > h1 {
-		font-size: 3svh;
-	}
+    table,
+    td {
+        font-size: 1.6vh;
+        padding: 2px;
+    }
 
-	#loginUser > input, #loginPass > input, #registerUser > input, #registerEmail > input, #registerPW > input, #registerConfirmPW > input{
-		width: 100%;
-	}
+    #divPlayers > .player {
+        font-size: 1.6vh;
+    }
 
-	#btnRegister, #btnLogin{
-		width: 10svh;
-	}
+    .pUsername.menu {
+        font-size: 16px;
+    }
 
+    .pUsername.match {
+        font-size: 13px;
+    }
+
+    #btnLeaderboard,
+    #btnCategoryEditor,
+    #btnNewGame,
+    #btnJoinGame,
+    #btnLogout {
+        font-size: 1.1em;
+    }
 }
 
-@media only screen and (max-width: 470px){
-	#screen {
-		width: 402px;
-		height: 722px;
+@media only screen and (max-width: 425px) {
+    #title > h1 {
+        font-size: 3vh;
+    }
 
-	}
+    table,
+    td {
+        font-size: 1.4vh;
+        padding: 1px;
+    }
 
-	#divLobby{
-		width: 337px;
-		height: 307px;
-	}
+    #divPlayers > .player {
+        font-size: 1.4vh;
+    }
 
-	#divGame{
-		width: 337px;
-		height: 449px;
-	}
-}
+    .pUsername.menu {
+        font-size: 14px;
+    }
 
-@media only screen and (width < 768px){
-	#divLeaderboard > table > tr > td {
-		font-size: 1.2svh;
-	}
-	#divLeaderboard > table > tr > th {
-		font-size: 1.3svh;
-	}
+    .pUsername.match {
+        font-size: 12px;
+    }
+
+    #btnLeaderboard,
+    #btnCategoryEditor,
+    #btnNewGame,
+    #btnJoinGame,
+    #btnLogout {
+        font-size: 1em;
+    }
 }
