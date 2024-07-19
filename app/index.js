@@ -92,8 +92,6 @@ wss.on("connection", ws => {
 
 		// Client wants to login
 		if (method === "login") {
-			if (result.type === "auto") return doLogin(ws, result.id, result.username, result.email);
-
 			loginQuery(ws, result.username, result.password);
 			return;
 		}

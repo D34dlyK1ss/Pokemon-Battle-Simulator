@@ -48,23 +48,6 @@ function main() {
 			}
 
 			showLoginLayout();
-
-			const id = localStorage.getItem("id");
-			const username = localStorage.getItem("username");
-			const email = localStorage.getItem("email");
-
-			if (username) {
-				const payload = {
-					method: "login",
-					type: "auto",
-					id: id,
-					username: username,
-					email: email
-				};
-
-				ws.send(JSON.stringify(payload));
-			}
-
 			return;
 		}
 
@@ -98,9 +81,6 @@ function main() {
 			thisConnection.userId = userId;
 			thisConnection.username = username;
 			thisConnection.email = email;
-			localStorage.setItem("id", userId);
-			localStorage.setItem("username", username);
-			localStorage.setItem("email", email);
 			showMainMenuLayout();
 			return;
 		}
@@ -110,9 +90,6 @@ function main() {
 			delete thisConnection.userId;
 			delete thisConnection.username;
 			delete thisConnection.email;
-			localStorage.removeItem("id");
-			localStorage.removeItem("username");
-			localStorage.removeItem("email");
 			showLoginLayout();
 			return;
 		}
@@ -435,7 +412,7 @@ function main() {
 				spanErrorUsername.innerHTML = "Invalid Username";
 			else spanErrorUsername.innerHTML = null;
 			if (!inputEmail.value) spanErrorEmail.innerHTML = "Email missing";
-			else if (/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(inputEmail.value))
+			else if (!(/[\w-\.]+@([\w-]+\.)+[\w-]{2,4}/.test(inputEmail.value)))
 				spanErrorEmail.innerHTML = "Invalid email";
 			else spanErrorEmail.innerHTML = null;
 			if (!inputPassword.value)
