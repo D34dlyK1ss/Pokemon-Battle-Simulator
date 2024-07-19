@@ -278,13 +278,13 @@ function main() {
 			else spanErrorPassword.innerHTML = null;
 
 			if (!spanErrorUsername.innerHTML && !spanErrorPassword.innerHTML) {
-			const payload = {
-				"method": "login",
-				"username": inputUsername.value,
-				"password": inputPassword.value
-			};
+				const payload = {
+					"method": "login",
+					"username": inputUsername.value,
+					"password": inputPassword.value
+				};
 
-			ws.send(JSON.stringify(payload));
+				ws.send(JSON.stringify(payload));
 			}
 		});
 		divLoginButton.appendChild(btnLogin);
@@ -434,14 +434,14 @@ function main() {
 			else spanErrorConfirmPassword.innerHTML = null;
 
 			if (!spanErrorUsername.innerHTML && !spanErrorEmail.innerHTML && !spanErrorPassword.innerHTML && !spanErrorConfirmPassword.innerHTML) {
-			const payload = {
-				"method": "register",
-				"username": inputUsername.value,
-				"email": inputEmail.value,
-				"password": inputPassword.value
-			};
+				const payload = {
+					"method": "register",
+					"username": inputUsername.value,
+					"email": inputEmail.value,
+					"password": inputPassword.value
+				};
 
-			ws.send(JSON.stringify(payload));
+				ws.send(JSON.stringify(payload));
 			}
 		});
 		registerButton.appendChild(btnRegister);
@@ -488,7 +488,7 @@ function main() {
 					"method": "getProfile",
 					"userId": _userId
 				};
-	
+
 				ws.send(JSON.stringify(payload));
 			});
 		}
@@ -993,13 +993,13 @@ function main() {
 			else spanErrorConfirmPassword.innerHTML = null;
 
 			if (!spanErrorPassword.innerHTML && !spanErrorConfirmPassword.innerHTML) {
-			const payload = {
-				"method": "changePassword",
-				"recoveryCode": _recoveryCode,
-				"newPassword": inputNewPassword.value
-			};
+				const payload = {
+					"method": "changePassword",
+					"recoveryCode": _recoveryCode,
+					"newPassword": inputNewPassword.value
+				};
 
-			ws.send(JSON.stringify(payload));
+				ws.send(JSON.stringify(payload));
 			}
 		});
 		divChangePassword.appendChild(btnChangePassword);
