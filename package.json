@@ -7,12 +7,13 @@
   "author": "João Martins & Rodrigo Silva",
   "license": "ISC",
   "scripts": {
-    "start": "node ."
+    "dev": "nodemon ."
   },
   "dependencies": {
     "bootstrap": "^5.3.2",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "express-session": "^1.18.0",
     "jsdom": "^22.1.0",
     "mysql2": "^3.6.3",
     "nodemailer": "^6.9.7",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@types/express": "^4.17.19",
     "@types/ws": "^8.5.7",
-    "eslint": "^8.51.0"
+    "eslint": "^8.51.0",
+    "nodemon": "^3.1.4"
   }
 }
