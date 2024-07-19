@@ -6,10 +6,6 @@ export default [
 	"arrse",
 	"arse",
 	"ass",
-	"assfukka",
-	"asshole",
-	"asswhole",
-	"ausschwitz",
 	"ballbag",
 	"ballsack",
 	"bastard",
@@ -345,4 +341,4 @@ export default [
 	"willy",
 	"xrated",
 	"xxx"
-]
+];

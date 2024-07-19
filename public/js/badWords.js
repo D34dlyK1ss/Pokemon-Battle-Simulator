@@ -6,10 +6,6 @@ const badWords = [
 	"arrse",
 	"arse",
 	"ass",
-	"assfukka",
-	"asshole",
-	"asswhole",
-	"ausschwitz",
 	"ballbag",
 	"ballsack",
 	"bastard",
@@ -345,4 +341,4 @@ const badWords = [
 	"willy",
 	"xrated",
 	"xxx"
-]
+];
