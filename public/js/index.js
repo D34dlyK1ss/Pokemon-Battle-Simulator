@@ -13,7 +13,8 @@ function main() {
 			notify(response.header, response.message);
 
 			if (response.error) {
-				if (response.action === "recoveringAccount") window.location.replace(domainURL);
+				if (response.action === "recoveringAccount")
+					window.location.replace(domainURL);
 			}
 
 			return;
@@ -28,8 +29,8 @@ function main() {
 
 			if (verificationCode) {
 				const payload = {
-					"method": "checkVerificationCode",
-					"verificationCode": verificationCode
+					method: "checkVerificationCode",
+					verificationCode: verificationCode
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -38,8 +39,8 @@ function main() {
 
 			if (recoveryCode) {
 				const payload = {
-					"method": "checkRecoveryCode",
-					"recoveryCode": recoveryCode
+					method: "checkRecoveryCode",
+					recoveryCode: recoveryCode
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -54,11 +55,11 @@ function main() {
 
 			if (username) {
 				const payload = {
-					"method": "login",
-					"type": "auto",
-					"id": id,
-					"username": username,
-					"email": email
+					method: "login",
+					type: "auto",
+					id: id,
+					username: username,
+					email: email
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -130,7 +131,11 @@ function main() {
 		// This client joined a game
 		if (method === "joinGame") {
 			gameId = response.game.id;
-			showLobbyLayout(gameId, response.game.players[0].username, response.game.players);
+			showLobbyLayout(
+				gameId,
+				response.game.players[0].username,
+				response.game.players
+			);
 			return;
 		}
 
@@ -192,10 +197,10 @@ function main() {
 
 	function joinGame(_gameId) {
 		const payload = {
-			"method": "joinGame",
-			"username": thisConnection.username,
-			"connectionId": thisConnection.id,
-			"gameId": _gameId
+			method: "joinGame",
+			username: thisConnection.username,
+			connectionId: thisConnection.id,
+			gameId: _gameId
 		};
 
 		ws.send(JSON.stringify(payload));
@@ -226,7 +231,7 @@ function main() {
 		inputUsername.id = "inputUsername";
 		inputUsername.type = "text";
 		inputUsername.placeholder = "Username / Email";
-		inputUsername.addEventListener("keydown", event => {
+		inputUsername.addEventListener("keydown", (event) => {
 			if (event.key === "Enter") document.getElementById("btnLogin").click();
 		});
 		divLoginUser.appendChild(inputUsername);
@@ -250,7 +255,7 @@ function main() {
 		inputPassword.id = "inputPassword";
 		inputPassword.type = "password";
 		inputPassword.placeholder = "Password";
-		inputPassword.addEventListener("keydown", event => {
+		inputPassword.addEventListener("keydown", (event) => {
 			if (event.key === "Enter") document.getElementById("btnLogin").click();
 		});
 		divLoginPass.appendChild(inputPassword);
@@ -272,16 +277,18 @@ function main() {
 			const inputUsername = document.getElementById("inputUsername");
 			const inputPassword = document.getElementById("inputPassword");
 
-			if (!inputUsername.value) spanErrorUsername.innerHTML = "Username missing";
+			if (!inputUsername.value)
+				spanErrorUsername.innerHTML = "Username missing";
 			else spanErrorUsername.innerHTML = null;
-			if (!inputPassword.value) spanErrorPassword.innerHTML = "Password missing";
+			if (!inputPassword.value)
+				spanErrorPassword.innerHTML = "Password missing";
 			else spanErrorPassword.innerHTML = null;
 
 			if (!spanErrorUsername.innerHTML && !spanErrorPassword.innerHTML) {
 				const payload = {
-					"method": "login",
-					"username": inputUsername.value,
-					"password": inputPassword.value
+					method: "login",
+					username: inputUsername.value,
+					password: inputPassword.value
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -418,27 +425,41 @@ function main() {
 			const inputEmail = document.getElementById("inputEmail");
 			const inputPassword = document.getElementById("inputPassword");
 
-			if (!inputUsername.value) spanErrorUsername.innerHTML = "Username missing";
-			else if (inputUsername.value.length > 16) spanErrorUsername.innerHTML = "Username too long";
-			else if (inputUsername.value.length < 4) spanErrorUsername.innerHTML = "Username too short";
-			else if (/[^a-zA-Z0-9_-]/.test(profanityFilter(inputUsername.value))) spanErrorUsername.innerHTML = "Invalid Username";
+			if (!inputUsername.value)
+				spanErrorUsername.innerHTML = "Username missing";
+			else if (inputUsername.value.length > 16)
+				spanErrorUsername.innerHTML = "Username too long";
+			else if (inputUsername.value.length < 4)
+				spanErrorUsername.innerHTML = "Username too short";
+			else if (/[^a-zA-Z0-9_-]/.test(profanityFilter(inputUsername.value)))
+				spanErrorUsername.innerHTML = "Invalid Username";
 			else spanErrorUsername.innerHTML = null;
 			if (!inputEmail.value) spanErrorEmail.innerHTML = "Email missing";
-			else if (/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(inputEmail.value)) spanErrorEmail.innerHTML = "Invalid email";
+			else if (/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(inputEmail.value))
+				spanErrorEmail.innerHTML = "Invalid email";
 			else spanErrorEmail.innerHTML = null;
-			if (!inputPassword.value) spanErrorPassword.innerHTML = "Password missing";
-			else if (inputPassword.value.length < 8) spanErrorPassword.innerHTML = "Password too short";
+			if (!inputPassword.value)
+				spanErrorPassword.innerHTML = "Password missing";
+			else if (inputPassword.value.length < 8)
+				spanErrorPassword.innerHTML = "Password too short";
 			else spanErrorPassword.innerHTML = null;
-			if (!inputConfirmPassword.value) spanErrorConfirmPassword.innerHTML = "Confirmation password missing";
-			else if (inputConfirmPassword.value !== inputPassword.value) spanErrorConfirmPassword.innerHTML = "Passwords don't match";
+			if (!inputConfirmPassword.value)
+				spanErrorConfirmPassword.innerHTML = "Confirmation password missing";
+			else if (inputConfirmPassword.value !== inputPassword.value)
+				spanErrorConfirmPassword.innerHTML = "Passwords don't match";
 			else spanErrorConfirmPassword.innerHTML = null;
 
-			if (!spanErrorUsername.innerHTML && !spanErrorEmail.innerHTML && !spanErrorPassword.innerHTML && !spanErrorConfirmPassword.innerHTML) {
+			if (
+				!spanErrorUsername.innerHTML &&
+				!spanErrorEmail.innerHTML &&
+				!spanErrorPassword.innerHTML &&
+				!spanErrorConfirmPassword.innerHTML
+			) {
 				const payload = {
-					"method": "register",
-					"username": inputUsername.value,
-					"email": inputEmail.value,
-					"password": inputPassword.value
+					method: "register",
+					username: inputUsername.value,
+					email: inputEmail.value,
+					password: inputPassword.value
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -472,7 +493,8 @@ function main() {
 		pUsername.style.color = _color;
 		pUsername.className = `pUsername ${_className}`;
 
-		if (_tries !== null) pUsername.innerHTML = `<b>${_username}</b>\n(${_tries})`;
+		if (_tries !== null)
+			pUsername.innerHTML = `<b>${_username}</b>\n(${_tries})`;
 		else pUsername.innerHTML = `<b>${_username}</b>`;
 		spanProfile.appendChild(pUsername);
 
@@ -485,8 +507,8 @@ function main() {
 			pUsername.className += " clickable";
 			pUsername.addEventListener("click", () => {
 				const payload = {
-					"method": "getProfile",
-					"userId": _userId
+					method: "getProfile",
+					userId: _userId
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -503,7 +525,16 @@ function main() {
 		divMainMenu.id = "divMainMenu";
 		document.getElementById("screen").appendChild(divMainMenu);
 
-		divMainMenu.appendChild(drawProfile("menu", thisConnection.userId, thisConnection.username, thisConnection.email, null, null));
+		divMainMenu.appendChild(
+			drawProfile(
+				"menu",
+				thisConnection.userId,
+				thisConnection.username,
+				thisConnection.email,
+				null,
+				null
+			)
+		);
 
 		const btnNewGame = document.createElement("button");
 		btnNewGame.id = "btnNewGame";
@@ -511,7 +542,7 @@ function main() {
 		btnNewGame.textContent = "New Game";
 		btnNewGame.addEventListener("click", () => {
 			const payload = {
-				"method": "getCategoryList"
+				method: "getCategoryList"
 			};
 
 			ws.send(JSON.stringify(payload));
@@ -538,7 +569,7 @@ function main() {
 		const inputJoinGame = document.createElement("input");
 		inputJoinGame.id = "inputJoinGame";
 		inputJoinGame.type = "text";
-		inputJoinGame.addEventListener("keydown", event => {
+		inputJoinGame.addEventListener("keydown", (event) => {
 			if (event.key === "Enter") document.getElementById("btnJoinGame").click();
 		});
 		divJoinGame.appendChild(inputJoinGame);
@@ -561,7 +592,7 @@ function main() {
 		btnLeaderboard.textContent = "Leaderboard";
 		btnLeaderboard.addEventListener("click", () => {
 			const payload = {
-				"method": "getLeaderboard"
+				method: "getLeaderboard"
 			};
 
 			ws.send(JSON.stringify(payload));
@@ -577,8 +608,8 @@ function main() {
 
 		btnLogout.addEventListener("click", () => {
 			const payload = {
-				"method": "logout",
-				"username": thisConnection.username
+				method: "logout",
+				username: thisConnection.username
 			};
 
 			ws.send(JSON.stringify(payload));
@@ -644,19 +675,21 @@ function main() {
 		btnCreateGame.className = "btn btn-primary";
 		btnCreateGame.textContent = "Create Game";
 		btnCreateGame.addEventListener("click", () => {
-			const selectedCategory = _categoryList.find(c => c.id === parseInt(selCategoryList.value));
+			const selectedCategory = _categoryList.find(
+				(c) => c.id === parseInt(selCategoryList.value)
+			);
 			let tries = parseInt(inputTries.value);
 
 			if (tries > 5) tries = 5;
 			else if (tries < 1) tries = 1;
 
 			const payload = {
-				"method": "newGame",
-				"username": thisConnection.username,
-				"categoryId": parseInt(selectedCategory.id),
-				"Name": selectedCategory.name,
-				"items": selectedCategory.items,
-				"tries": tries
+				method: "newGame",
+				username: thisConnection.username,
+				categoryId: parseInt(selectedCategory.id),
+				Name: selectedCategory.name,
+				items: selectedCategory.items,
+				tries: tries
 			};
 
 			ws.send(JSON.stringify(payload));
@@ -808,11 +841,11 @@ function main() {
 			if (!isValid) return;
 
 			const payload = {
-				"method": "createCategory",
-				"userId": thisConnection.userId,
-				"name": inputName.value,
-				"items": itemsArray,
-				"isPublic": cbPublic.checked
+				method: "createCategory",
+				userId: thisConnection.userId,
+				name: inputName.value,
+				items: itemsArray,
+				isPublic: cbPublic.checked
 			};
 
 			ws.send(JSON.stringify(payload));
@@ -874,12 +907,11 @@ function main() {
 		lblEmail.htmlFor = "inputEmail";
 		accountRecoveryEmail.appendChild(lblEmail);
 
-
 		const inputEmail = document.createElement("input");
 		inputEmail.id = "inputEmail";
 		inputEmail.type = "email";
 		inputEmail.placeholder = "Email";
-		inputEmail.addEventListener("keydown", event => {
+		inputEmail.addEventListener("keydown", (event) => {
 			if (event.key === "Enter") document.getElementById("btnSend").click();
 		});
 		accountRecoveryEmail.appendChild(inputEmail);
@@ -896,13 +928,16 @@ function main() {
 		btnSend.addEventListener("click", () => {
 			if (inputEmail.value) {
 				const payload = {
-					"method": "recoverAccount",
-					"email": inputEmail.value
+					method: "recoverAccount",
+					email: inputEmail.value
 				};
 
 				ws.send(JSON.stringify(payload));
 				showLoginLayout();
-				notify("Success", "If the email is registered, an account recovery email will be sent.");
+				notify(
+					"Success",
+					"If the email is registered, an account recovery email will be sent."
+				);
 			}
 		});
 		accountRecoveryButton.appendChild(btnSend);
@@ -984,19 +1019,24 @@ function main() {
 		btnChangePassword.textContent = "Change Password";
 		btnChangePassword.addEventListener("click", () => {
 			const inputNewPassword = document.getElementById("inputNewPassword");
-			const inputConfirmPassword = document.getElementById("inputConfirmPassword");
+			const inputConfirmPassword = document.getElementById(
+				"inputConfirmPassword"
+			);
 
-			if (!inputNewPassword.value) spanErrorPassword.innerHTML = "Password missing";
+			if (!inputNewPassword.value)
+				spanErrorPassword.innerHTML = "Password missing";
 			else spanErrorPassword.innerHTML = null;
-			if (!inputConfirmPassword.value) spanErrorConfirmPassword.innerHTML = "Confirmation password missing";
-			else if (inputConfirmPassword.value !== inputNewPassword.value) spanErrorConfirmPassword.innerHTML = "Passwords don't match";
+			if (!inputConfirmPassword.value)
+				spanErrorConfirmPassword.innerHTML = "Confirmation password missing";
+			else if (inputConfirmPassword.value !== inputNewPassword.value)
+				spanErrorConfirmPassword.innerHTML = "Passwords don't match";
 			else spanErrorConfirmPassword.innerHTML = null;
 
 			if (!spanErrorPassword.innerHTML && !spanErrorConfirmPassword.innerHTML) {
 				const payload = {
-					"method": "changePassword",
-					"recoveryCode": _recoveryCode,
-					"newPassword": inputNewPassword.value
+					method: "changePassword",
+					recoveryCode: _recoveryCode,
+					newPassword: inputNewPassword.value
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -1035,8 +1075,8 @@ function main() {
 		btnStart.textContent = "Start";
 		btnStart.addEventListener("click", () => {
 			const payload = {
-				"method": "startGame",
-				"gameId": gameId
+				method: "startGame",
+				gameId: gameId
 			};
 
 			ws.send(JSON.stringify(payload));
@@ -1078,13 +1118,13 @@ function main() {
 		inputMessage.placeholder = "Chat here";
 		inputMessage.maxLength = 100;
 
-		inputMessage.addEventListener("keydown", event => {
+		inputMessage.addEventListener("keydown", (event) => {
 			if (inputMessage.value && event.key === "Enter") {
 				const payload = {
-					"method": "sendChatMessage",
-					"gameId": gameId,
-					"username": thisConnection.username,
-					"text": inputMessage.value
+					method: "sendChatMessage",
+					gameId: gameId,
+					username: thisConnection.username,
+					text: inputMessage.value
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -1097,9 +1137,9 @@ function main() {
 
 	function leaveGame() {
 		const payload = {
-			"method": "leaveGame",
-			"username": thisConnection.username,
-			"gameId": gameId
+			method: "leaveGame",
+			username: thisConnection.username,
+			gameId: gameId
 		};
 
 		ws.send(JSON.stringify(payload));
@@ -1140,8 +1180,7 @@ function main() {
 					if (spanName.style.color === "black") {
 						spanName.style.color = "grey";
 						imgCell.style.filter = "grayscale()";
-					}
-					else {
+					} else {
 						spanName.style.color = "black";
 						imgCell.style.filter = null;
 					}
@@ -1166,7 +1205,7 @@ function main() {
 		const inputGuess = document.createElement("input");
 		inputGuess.id = "inputGuess";
 		inputGuess.placeholder = "Type your answer here!";
-		inputGuess.addEventListener("keydown", event => {
+		inputGuess.addEventListener("keydown", (event) => {
 			if (inputGuess.value && event.key === "Enter") {
 				guess(inputGuess.value);
 				inputGuess.value = null;
@@ -1193,10 +1232,10 @@ function main() {
 
 	function guess(_name) {
 		const payload = {
-			"method": "guess",
-			"gameId": gameId,
-			"username": thisConnection.username,
-			"guess": _name
+			method: "guess",
+			gameId: gameId,
+			username: thisConnection.username,
+			guess: _name
 		};
 
 		ws.send(JSON.stringify(payload));
@@ -1237,12 +1276,42 @@ function main() {
 		divLeaderboard.appendChild(leaderboardTable);
 		const leaderboardTableHead = document.createElement("tr");
 		leaderboardTable.appendChild(leaderboardTableHead);
-		leaderboardTableHead.appendChild(Object.assign(document.createElement("th"), {className: "col", innerText: "User"}));
-		leaderboardTableHead.appendChild(Object.assign(document.createElement("th"), {className: "col", innerText: "Wins"}));
-		leaderboardTableHead.appendChild(Object.assign(document.createElement("th"), {className: "col", innerText: "Losses"}));
-		leaderboardTableHead.appendChild(Object.assign(document.createElement("th"), {className: "col", innerText: "Matches"}));
-		leaderboardTableHead.appendChild(Object.assign(document.createElement("th"), {className: "col", innerText: "Win Rate"}));
-		leaderboardTableHead.appendChild(Object.assign(document.createElement("th"), {className: "col", innerText: "Points"}));
+		leaderboardTableHead.appendChild(
+			Object.assign(document.createElement("th"), {
+				className: "col",
+				innerText: "User"
+			})
+		);
+		leaderboardTableHead.appendChild(
+			Object.assign(document.createElement("th"), {
+				className: "col",
+				innerText: "Wins"
+			})
+		);
+		leaderboardTableHead.appendChild(
+			Object.assign(document.createElement("th"), {
+				className: "col",
+				innerText: "Losses"
+			})
+		);
+		leaderboardTableHead.appendChild(
+			Object.assign(document.createElement("th"), {
+				className: "col",
+				innerText: "Matches"
+			})
+		);
+		leaderboardTableHead.appendChild(
+			Object.assign(document.createElement("th"), {
+				className: "col",
+				innerText: "Win Rate"
+			})
+		);
+		leaderboardTableHead.appendChild(
+			Object.assign(document.createElement("th"), {
+				className: "col",
+				innerText: "Points"
+			})
+		);
 
 		for (let user of _data) {
 			const userRow = document.createElement("tr");
@@ -1279,7 +1348,6 @@ function main() {
 			userRow.appendChild(spanPoints);
 
 			leaderboardTable.appendChild(userRow);
-
 		}
 	}
 
@@ -1293,7 +1361,8 @@ function main() {
 		const username = _userInfo.username;
 		const hModalTitle = document.createElement("h5");
 		hModalTitle.className = "modal-title";
-		if (thisConnection.username === _userInfo.username) hModalTitle.innerHTML = "Your Profile";
+		if (thisConnection.username === _userInfo.username)
+			hModalTitle.innerHTML = "Your Profile";
 		else hModalTitle.innerHTML = `${username}'s Profile`;
 		profileModalHeader.appendChild(hModalTitle);
 		const btnClose = document.createElement("button");
@@ -1368,7 +1437,16 @@ function main() {
 			let color;
 			if (player1Id === match.winner_id) color = "green";
 			else color = "red";
-			divPlayersMatch.appendChild(drawProfile("match", player1Id, player1Username, match.player1_email, match.player1_tries, color));
+			divPlayersMatch.appendChild(
+				drawProfile(
+					"match",
+					player1Id,
+					player1Username,
+					match.player1_email,
+					match.player1_tries,
+					color
+				)
+			);
 			const spanVS = document.createElement("span");
 			spanVS.className = "vs";
 			spanVS.innerHTML = "VS";
@@ -1376,7 +1454,16 @@ function main() {
 			divPlayersMatch.appendChild(spanVS);
 			if (player2Id === match.winner_id) color = "green";
 			else color = "red";
-			divPlayersMatch.appendChild(drawProfile("match", player2Id, player2Username, match.player2_email, match.player2_tries, color));
+			divPlayersMatch.appendChild(
+				drawProfile(
+					"match",
+					player2Id,
+					player2Username,
+					match.player2_email,
+					match.player2_tries,
+					color
+				)
+			);
 			divMatch.appendChild(divPlayersMatch);
 
 			const spanCategory = document.createElement("span");
@@ -1386,17 +1473,32 @@ function main() {
 
 			const spanDuration = document.createElement("span");
 			spanDuration.className = "spanDuration";
-			spanDuration.innerHTML = `<b>Duration:</b> ${new Date(match.duration).toLocaleTimeString(navigator.language, { minute: "2-digit", second: "2-digit" })}`;
+			spanDuration.innerHTML = `<b>Duration:</b> ${new Date(
+				match.duration
+			).toLocaleTimeString(navigator.language, {
+				minute: "2-digit",
+				second: "2-digit"
+			})}`;
 			divMatch.appendChild(spanDuration);
 
 			const spanDateTime = document.createElement("span");
 			spanDateTime.className = "spanDateTime";
-			spanDateTime.innerHTML = new Date(match.created_at).toLocaleDateString(navigator.language, { day: "numeric", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+			spanDateTime.innerHTML = new Date(match.created_at).toLocaleDateString(
+				navigator.language,
+				{
+					day: "numeric",
+					month: "2-digit",
+					year: "numeric",
+					hour: "2-digit",
+					minute: "2-digit"
+				}
+			);
 			divMatch.appendChild(spanDateTime);
 
 			divMatchHistory.appendChild(divMatch);
 
-			if (html.lastElementChild !== divMatch) divMatchHistory.appendChild(document.createElement("br"));
+			if (html.lastElementChild !== divMatch)
+				divMatchHistory.appendChild(document.createElement("br"));
 		}
 
 		profileModalBody.innerHTML = html.innerHTML;
@@ -1435,11 +1537,12 @@ function main() {
 			divPlayer.className = "player";
 			const spanPlayer = document.createElement("span");
 			spanPlayer.className = "clickable";
-			spanPlayer.innerHTML = player.username === thisConnection.username ? "You" : player.username;
+			spanPlayer.innerHTML =
+				player.username === thisConnection.username ? "You" : player.username;
 			spanPlayer.addEventListener("click", () => {
 				const payload = {
-					"method": "getProfile",
-					"userId": player.id
+					method: "getProfile",
+					userId: player.id
 				};
 
 				ws.send(JSON.stringify(payload));
@@ -1449,9 +1552,11 @@ function main() {
 			divPlayers.appendChild(divPlayer);
 		}
 
-		if (_arrayPlayers[0].username === thisConnection.username) document.getElementById("btnStart").hidden = false;
+		if (_arrayPlayers[0].username === thisConnection.username)
+			document.getElementById("btnStart").hidden = false;
 
-		if (_arrayPlayers.length <= 1) document.getElementById("btnStart").disabled = true;
+		if (_arrayPlayers.length <= 1)
+			document.getElementById("btnStart").disabled = true;
 		else document.getElementById("btnStart").disabled = false;
 	}
 
@@ -1488,9 +1593,11 @@ function main() {
 			btnClose.setAttribute("aria-label", "Close");
 			header.appendChild(btnClose);
 		}
-		if (_redirect) document.getElementById("notificationModalButton").addEventListener("click", () => window.location.replace(domainURL));
+		if (_redirect)
+			document
+				.getElementById("notificationModalButton")
+				.addEventListener("click", () => window.location.replace(domainURL));
 
-		// eslint-disable-next-line no-undef
 		new bootstrap.Modal(document.getElementById("notificationModal")).show();
 	}
 
@@ -1522,7 +1629,11 @@ function main() {
 			for (let i = 0; i <= sanitizedMessage.length - word.length; i++) {
 				const batch = sanitizedMessage.substr(i, word.length);
 
-				if (batch.toLowerCase() === word) string = string.slice(0, i) + "*".repeat(word.length) + string.slice(i + word.length);
+				if (batch.toLowerCase() === word)
+					string =
+						string.slice(0, i) +
+						"*".repeat(word.length) +
+						string.slice(i + word.length);
 			}
 		}
 
