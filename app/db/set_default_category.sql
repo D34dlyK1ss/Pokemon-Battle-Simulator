@@ -1,3 +1,6 @@
+CREATE PROCEDURE `set_default_category` ()
+BEGIN
+DELETE FROM category WHERE name = 'People' AND type = 'Default';
 INSERT INTO category(name, type, items, isPublic) VALUES ('People', 'Default', '[
 {"name": "Katrin", "picture": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQofMSS_S9DwXRjNpvi91Pma_HaE-GEDc2n3jGKtiiq4YzPJiTeUmctoM5xQRyNd_AJtbo"},
 {"name": "Paul", "picture": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSssRjq1tCY1dNpHYxtTKXotD82p9unUqdC847pUSS6atQujMYt-mLE2EzNHDn5Sem-B3I"},
@@ -24,3 +27,4 @@ INSERT INTO category(name, type, items, isPublic) VALUES ('People', 'Default', '
 {"name": "Stephen", "picture": "https://img.freepik.com/free-photo/orthodontics-dental-care-stomatology-concept-close-up-portrait-handsome-asian-man-with-teeth-braces-smiling-pleased-looking-hopeful-happy-standing-white-background_1258-57143.jpg"},
 {"name": "Lois", "picture": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQHoXJv5Ky9_yu_6Lpri273myffvYAvWlmSjKWIJ0RyvFPGq2b2aOd0TllLyyw8GuxknwI"}
 ]', true);
+END

@@ -412,7 +412,7 @@ function main() {
 				spanErrorUsername.innerHTML = "Invalid Username";
 			else spanErrorUsername.innerHTML = null;
 			if (!inputEmail.value) spanErrorEmail.innerHTML = "Email missing";
-			else if (!(/[\w-\.]+@([\w-]+\.)+[\w-]{2,4}/.test(inputEmail.value)))
+			else if (!(/[\w-.]+@([\w-]+\.)+[\w-]{2,4}/.test(inputEmail.value)))
 				spanErrorEmail.innerHTML = "Invalid email";
 			else spanErrorEmail.innerHTML = null;
 			if (!inputPassword.value)
@@ -453,7 +453,7 @@ function main() {
 		divRegister.appendChild(spanLogin);
 	}
 
-	function drawProfile(_className, _userId, _username, _email, _tries, _color) {
+	function drawProfile(_className, _userId, _username, _email, _tries, _maxTries, _color) {
 		const spanProfile = document.createElement("span");
 		spanProfile.className = `spanProfile ${_className}`;
 
@@ -471,7 +471,7 @@ function main() {
 		pUsername.className = `pUsername ${_className}`;
 
 		if (_tries !== null)
-			pUsername.innerHTML = `<b>${_username}</b>\n(${_tries})`;
+			pUsername.innerHTML = `<b>${_username}</b>\n(${_tries}/${_maxTries})`;
 		else pUsername.innerHTML = `<b>${_username}</b>`;
 		spanProfile.appendChild(pUsername);
 
@@ -1406,6 +1406,7 @@ function main() {
 			const player2Id = match.player2_id;
 			const player1Username = match.player1_username;
 			const player2Username = match.player2_username;
+			const maxTries = match.max_tries;
 			const divMatch = document.createElement("div");
 			divMatch.className = "divMatch";
 
@@ -1421,6 +1422,7 @@ function main() {
 					player1Username,
 					match.player1_email,
 					match.player1_tries,
+					maxTries,
 					color
 				)
 			);
@@ -1438,6 +1440,7 @@ function main() {
 					player2Username,
 					match.player2_email,
 					match.player2_tries,
+					maxTries,
 					color
 				)
 			);

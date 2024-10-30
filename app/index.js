@@ -31,7 +31,8 @@ try {
 
 const server = https.createServer({ key, cert }, app);
 const serverPort = parseInt(SERVER_PORT);
-server.listen(serverPort, () => console.log(`Server listening to port ${serverPort}`));
+const domainURL = `https://26.35.146.0:${serverPort}`;
+server.listen(serverPort, () => console.log(domainURL));
 
 
 const db = mysql.createConnection({
@@ -51,7 +52,6 @@ const transporter = nodemailer.createTransport({
 	}
 });
 
-const domainURL = `https://26.35.146.0:${serverPort}`;
 const activeConnections = new Map();	// key: connection ID, value: ws
 const accountsToRecover = new Map();	// key: recovery code, value: email
 const accountsToVerify = new Map();		// key: verification code, value: email
